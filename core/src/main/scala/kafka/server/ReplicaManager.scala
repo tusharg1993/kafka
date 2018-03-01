@@ -1619,7 +1619,10 @@ class ReplicaManager(val config: KafkaConfig,
     for ((dir, logs) <- logsByDir) {
       val hwms = logs.map(log => log.topicPartition -> log.highWatermark).toMap
       try {
-        highWatermarkCheckpoints.get(dir).foreach(_.write(hwms))
+        val cache = highWatermarkCheckpoints(dir)
+        val previousHwms = cache.read()
+        val previousHwmsOfExistingReplicas = previousHwms.filterKeys(tp => logManager.getLog(tp).nonEmpty)
+        highWatermarkCheckpoints.get(dir).foreach(_.write(previousHwmsOfExistingReplicas ++ hwms))
       } catch {
         case e: KafkaStorageException =>
           error(s"Error while writing to highwatermark file in directory $dir", e)
