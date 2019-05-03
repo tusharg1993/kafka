@@ -43,19 +43,8 @@ import java.util.function.Function;
 
 import org.apache.kafka.common.Metric;
 import org.apache.kafka.common.MetricName;
-import org.apache.kafka.common.metrics.stats.Avg;
-import org.apache.kafka.common.metrics.stats.CumulativeSum;
-import org.apache.kafka.common.metrics.stats.Max;
-import org.apache.kafka.common.metrics.stats.Meter;
-import org.apache.kafka.common.metrics.stats.Min;
-import org.apache.kafka.common.metrics.stats.Percentile;
-import org.apache.kafka.common.metrics.stats.Percentiles;
+import org.apache.kafka.common.metrics.stats.*;
 import org.apache.kafka.common.metrics.stats.Percentiles.BucketSizing;
-import org.apache.kafka.common.metrics.stats.Rate;
-import org.apache.kafka.common.metrics.stats.WindowedCount;
-import org.apache.kafka.common.metrics.stats.WindowedSum;
-import org.apache.kafka.common.metrics.stats.SimpleRate;
-import org.apache.kafka.common.metrics.stats.Value;
 import org.apache.kafka.common.utils.MockTime;
 import org.junit.After;
 import org.junit.Before;
@@ -415,6 +404,24 @@ public class MetricsTest {
     public void testDuplicateMetricName() {
         metrics.sensor("test").add(metrics.metricName("test", "grp1"), new Avg());
         metrics.sensor("test2").add(metrics.metricName("test", "grp1"), new CumulativeSum());
+    }
+
+    @Test
+    public void testDuplicateMetricNameOptionallyReplace() {
+        metrics.setReplaceOnDuplicateMetric(true);
+
+        int initialSize = metrics.metrics().size();
+        MetricName metricName = metrics.metricName("test1", "grp1");
+        metrics.addMetric(metricName, new WindowedCount());
+        assertEquals(initialSize + 1, metrics.metrics().size());
+
+        metrics.addMetric(metricName, new WindowedCount());
+        assertEquals(initialSize + 1, metrics.metrics().size());
+
+        assertNotNull(metrics.removeMetric(metricName));
+        assertNull(metrics.metrics().get(metricName));
+
+        assertEquals(initialSize, metrics.metrics().size());
     }
 
     @Test
