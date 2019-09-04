@@ -16,6 +16,8 @@
  */
 package org.apache.kafka.common.network;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import org.apache.kafka.common.KafkaException;
 import org.apache.kafka.common.config.SslConfigs;
@@ -31,12 +33,12 @@ import org.apache.kafka.common.utils.MockTime;
 import org.apache.kafka.common.utils.Time;
 import org.apache.kafka.common.utils.Utils;
 import org.apache.kafka.test.TestCondition;
+import org.apache.kafka.test.TestSslUtils.SSLProvider;
 import org.apache.kafka.test.TestUtils;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLParameters;
 import java.io.ByteArrayOutputStream;
@@ -52,6 +54,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -61,7 +65,13 @@ import static org.junit.Assert.fail;
 /**
  * Tests for the SSL transport layer. These use a test harness that runs a simple socket server that echos back responses.
  */
+@RunWith(Parameterized.class)
 public class SslTransportLayerTest {
+    private final SSLProvider provider;
+
+    public SslTransportLayerTest(SSLProvider provider) {
+        this.provider = provider;
+    }
 
     private static final int BUFFER_SIZE = 4 * 1024;
 
@@ -76,8 +86,8 @@ public class SslTransportLayerTest {
     @Before
     public void setup() throws Exception {
         // Create certificates for use by client and server. Add server cert to client truststore and vice versa.
-        serverCertStores = new CertStores(true, "server",  "localhost");
-        clientCertStores = new CertStores(false, "client", "localhost");
+        serverCertStores = new CertStores(true, "server",  "localhost", provider);
+        clientCertStores = new CertStores(false, "client", "localhost", provider);
         sslServerConfigs = serverCertStores.getTrustingConfig(clientCertStores);
         sslClientConfigs = clientCertStores.getTrustingConfig(serverCertStores);
         this.channelBuilder = new SslChannelBuilder(Mode.CLIENT, null, false);
@@ -117,8 +127,8 @@ public class SslTransportLayerTest {
     @Test
     public void testValidEndpointIdentificationSanIp() throws Exception {
         String node = "0";
-        serverCertStores = new CertStores(true, "server", InetAddress.getByName("127.0.0.1"));
-        clientCertStores = new CertStores(false, "client", InetAddress.getByName("127.0.0.1"));
+        serverCertStores = new CertStores(true, "server", InetAddress.getByName("127.0.0.1"), provider);
+        clientCertStores = new CertStores(false, "client", InetAddress.getByName("127.0.0.1"), provider);
         sslServerConfigs = serverCertStores.getTrustingConfig(clientCertStores);
         sslClientConfigs = clientCertStores.getTrustingConfig(serverCertStores);
         server = createEchoServer(SecurityProtocol.SSL);
@@ -137,8 +147,8 @@ public class SslTransportLayerTest {
     @Test
     public void testValidEndpointIdentificationCN() throws Exception {
         String node = "0";
-        serverCertStores = new CertStores(true, "localhost");
-        clientCertStores = new CertStores(false, "localhost");
+        serverCertStores = new CertStores(true, "localhost", provider);
+        clientCertStores = new CertStores(false, "localhost", provider);
         sslServerConfigs = serverCertStores.getTrustingConfig(clientCertStores);
         sslClientConfigs = clientCertStores.getTrustingConfig(serverCertStores);
         server = createEchoServer(SecurityProtocol.SSL);
@@ -187,8 +197,8 @@ public class SslTransportLayerTest {
         String node = "0";
 
         // Create client certificate with an invalid hostname
-        clientCertStores = new CertStores(false, "non-existent.com");
-        serverCertStores = new CertStores(true, "localhost");
+        clientCertStores = new CertStores(false, "non-existent.com", provider);
+        serverCertStores = new CertStores(true, "localhost", provider);
         sslServerConfigs = serverCertStores.getTrustingConfig(clientCertStores);
         sslClientConfigs = clientCertStores.getTrustingConfig(serverCertStores);
 
@@ -222,8 +232,8 @@ public class SslTransportLayerTest {
     @Test
     public void testInvalidEndpointIdentification() throws Exception {
         String node = "0";
-        serverCertStores = new CertStores(true, "server", "notahost");
-        clientCertStores = new CertStores(false, "client", "localhost");
+        serverCertStores = new CertStores(true, "server", "notahost", provider);
+        clientCertStores = new CertStores(false, "client", "localhost", provider);
         sslServerConfigs = serverCertStores.getTrustingConfig(clientCertStores);
         sslClientConfigs = clientCertStores.getTrustingConfig(serverCertStores);
         sslClientConfigs.put(SslConfigs.SSL_ENDPOINT_IDENTIFICATION_ALGORITHM_CONFIG, "HTTPS");
@@ -242,8 +252,8 @@ public class SslTransportLayerTest {
      */
     @Test
     public void testEndpointIdentificationDisabled() throws Exception {
-        serverCertStores = new CertStores(true, "server", "notahost");
-        clientCertStores = new CertStores(false, "client", "localhost");
+        serverCertStores = new CertStores(true, "server", "notahost", provider);
+        clientCertStores = new CertStores(false, "client", "localhost", provider);
         sslServerConfigs = serverCertStores.getTrustingConfig(clientCertStores);
         sslClientConfigs = clientCertStores.getTrustingConfig(serverCertStores);
 
@@ -543,11 +553,12 @@ public class SslTransportLayerTest {
     @Test
     public void testUnsupportedCiphers() throws Exception {
         String node = "0";
-        String[] cipherSuites = SSLContext.getDefault().getDefaultSSLParameters().getCipherSuites();
-        sslServerConfigs.put(SslConfigs.SSL_CIPHER_SUITES_CONFIG, Arrays.asList(cipherSuites[0]));
+        // Since Conscrypt does not support all the default JDK cipher suites, specifically pick two suites which are supported
+        // by both JDK and Conscrypt.
+        sslServerConfigs.put(SslConfigs.SSL_CIPHER_SUITES_CONFIG, Arrays.asList("TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA"));
         server = createEchoServer(SecurityProtocol.SSL);
 
-        sslClientConfigs.put(SslConfigs.SSL_CIPHER_SUITES_CONFIG, Arrays.asList(cipherSuites[1]));
+        sslClientConfigs.put(SslConfigs.SSL_CIPHER_SUITES_CONFIG, Arrays.asList("TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256"));
         createSelector(sslClientConfigs);
         InetSocketAddress addr = new InetSocketAddress("localhost", server.port());
         selector.connect(node, addr, BUFFER_SIZE, BUFFER_SIZE);
@@ -882,7 +893,7 @@ public class SslTransportLayerTest {
         oldClientSelector.connect(oldNode, addr, BUFFER_SIZE, BUFFER_SIZE);
         NetworkTestUtils.checkClientConnection(selector, oldNode, 100, 10);
 
-        CertStores newServerCertStores = new CertStores(true, "server", "localhost");
+        CertStores newServerCertStores = new CertStores(true, "server", "localhost", provider);
         Map<String, Object> newKeystoreConfigs = newServerCertStores.keyStoreProps();
         assertTrue("SslChannelBuilder not reconfigurable", serverChannelBuilder instanceof ListenerReconfigurable);
         ListenerReconfigurable reconfigurableBuilder = (ListenerReconfigurable) serverChannelBuilder;
@@ -903,7 +914,7 @@ public class SslTransportLayerTest {
         // Verify that old client continues to work
         NetworkTestUtils.checkClientConnection(oldClientSelector, oldNode, 100, 10);
 
-        CertStores invalidCertStores = new CertStores(true, "server", "127.0.0.1");
+        CertStores invalidCertStores = new CertStores(true, "server", "127.0.0.1", provider);
         Map<String, Object>  invalidConfigs = invalidCertStores.getTrustingConfig(clientCertStores);
         verifyInvalidReconfigure(reconfigurableBuilder, invalidConfigs, "keystore with different SubjectAltName");
 
@@ -942,7 +953,7 @@ public class SslTransportLayerTest {
         oldClientSelector.connect(oldNode, addr, BUFFER_SIZE, BUFFER_SIZE);
         NetworkTestUtils.checkClientConnection(selector, oldNode, 100, 10);
 
-        CertStores newClientCertStores = new CertStores(true, "client", "localhost");
+        CertStores newClientCertStores = new CertStores(true, "client", "localhost", provider);
         sslClientConfigs = newClientCertStores.getTrustingConfig(serverCertStores);
         Map<String, Object> newTruststoreConfigs = newClientCertStores.trustStoreProps();
         assertTrue("SslChannelBuilder not reconfigurable", serverChannelBuilder instanceof ListenerReconfigurable);
@@ -1145,5 +1156,13 @@ public class SslTransportLayerTest {
                 return size;
             }
         }
+    }
+
+    @Parameterized.Parameters(name = "SSLProvider={0}")
+    public static Collection<Object[]> data() {
+        Collection<Object[]> p = new ArrayList<>();
+        p.add(new Object[]{SSLProvider.DEFAULT});
+        p.add(new Object[]{SSLProvider.OPENSSL});
+        return p;
     }
 }

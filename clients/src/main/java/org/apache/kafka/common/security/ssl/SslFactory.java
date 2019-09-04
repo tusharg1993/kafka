@@ -60,8 +60,7 @@ public class SslFactory implements Reconfigurable {
     private final String clientAuthConfigOverride;
     private final boolean keystoreVerifiableUsingTruststore;
 
-    private String protocol;
-    private String provider;
+    private SslContextProvider sslContextProvider;
     private String kmfAlgorithm;
     private String tmfAlgorithm;
     private SecurityStore keystore = null;
@@ -86,8 +85,13 @@ public class SslFactory implements Reconfigurable {
 
     @Override
     public void configure(Map<String, ?> configs) throws KafkaException {
-        this.protocol =  (String) configs.get(SslConfigs.SSL_PROTOCOL_CONFIG);
-        this.provider = (String) configs.get(SslConfigs.SSL_PROVIDER_CONFIG);
+        try {
+            String sslContextProvider = (String) configs.get(SslConfigs.SSL_CONTEXT_PROVIDER_CLASS_CONFIG);
+            this.sslContextProvider = (SslContextProvider) Class.forName(sslContextProvider).newInstance();
+        } catch (Exception e) {
+            throw new KafkaException(e);
+        }
+        this.sslContextProvider.configure(configs);
 
         @SuppressWarnings("unchecked")
         List<String> cipherSuitesList = (List<String>) configs.get(SslConfigs.SSL_CIPHER_SUITES_CONFIG);
@@ -207,11 +211,7 @@ public class SslFactory implements Reconfigurable {
 
     // package access for testing
     SSLContext createSSLContext(SecurityStore keystore, SecurityStore truststore) throws GeneralSecurityException, IOException  {
-        SSLContext sslContext;
-        if (provider != null)
-            sslContext = SSLContext.getInstance(protocol, provider);
-        else
-            sslContext = SSLContext.getInstance(protocol);
+        SSLContext sslContext = sslContextProvider.getSSLContext();
 
         KeyManager[] keyManagers = null;
         if (keystore != null) {

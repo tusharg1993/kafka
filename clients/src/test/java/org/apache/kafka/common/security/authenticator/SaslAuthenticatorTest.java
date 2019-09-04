@@ -23,6 +23,7 @@ import java.nio.channels.SelectionKey;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -92,9 +93,12 @@ import org.apache.kafka.common.security.auth.AuthenticateCallbackHandler;
 import org.apache.kafka.common.security.authenticator.TestDigestLoginModule.DigestServerCallbackHandler;
 import org.apache.kafka.common.security.plain.internals.PlainServerCallbackHandler;
 
+import org.apache.kafka.test.TestSslUtils.SSLProvider;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -104,7 +108,13 @@ import static org.junit.Assert.fail;
 /**
  * Tests for the Sasl authenticator. These use a test harness that runs a simple socket server that echos back responses.
  */
+@RunWith(Parameterized.class)
 public class SaslAuthenticatorTest {
+    private final SSLProvider provider;
+
+    public SaslAuthenticatorTest(SSLProvider provider) {
+        this.provider = provider;
+    }
 
     private static final int BUFFER_SIZE = 4 * 1024;
 
@@ -121,8 +131,8 @@ public class SaslAuthenticatorTest {
     @Before
     public void setup() throws Exception {
         LoginManager.closeAll();
-        serverCertStores = new CertStores(true, "localhost");
-        clientCertStores = new CertStores(false, "localhost");
+        serverCertStores = new CertStores(true, "localhost", provider);
+        clientCertStores = new CertStores(false, "localhost", provider);
         saslServerConfigs = serverCertStores.getTrustingConfig(clientCertStores);
         saslClientConfigs = clientCertStores.getTrustingConfig(serverCertStores);
         credentialCache = new CredentialCache();
@@ -1694,5 +1704,13 @@ public class SaslAuthenticatorTest {
                 throw new SaslAuthenticationException("Login initialization failed", e);
             }
         }
+    }
+
+    @Parameterized.Parameters(name = "SSLProvider={0}")
+    public static Collection<Object[]> data() {
+        Collection<Object[]> p = new ArrayList<>();
+        p.add(new Object[]{SSLProvider.DEFAULT});
+        p.add(new Object[]{SSLProvider.OPENSSL});
+        return p;
     }
 }
