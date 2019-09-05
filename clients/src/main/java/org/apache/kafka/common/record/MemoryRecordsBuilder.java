@@ -409,7 +409,8 @@ public class MemoryRecordsBuilder {
         if (magic < RecordBatch.MAGIC_VALUE_V2 && headers != null && headers.length > 0) {
             for (Header header : headers) {
                 if (!header.key().startsWith(INTERNAL_HEADER_PREFIX)) {
-                    throw new IllegalArgumentException("Magic v" + magic + " does not support record headers");
+                    throw new IllegalArgumentException("Magic v" + magic + " does not support record headers. [Key = "
+                        + header.key() + "]");
                 }
             }
         }

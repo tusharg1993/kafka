@@ -809,7 +809,7 @@ public class RecordAccumulatorTest {
             );
             throw new IllegalStateException("The append of a record with non internal headers should have failed");
         } catch (IllegalArgumentException exception) {
-            assertEquals(exception.getMessage(), "Magic v1 does not support record headers");
+            assertEquals(exception.getMessage(), "Magic v1 does not support record headers. [Key = key]");
         }
         batch.tryAppend(
                 1L,
