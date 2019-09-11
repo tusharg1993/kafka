@@ -239,10 +239,7 @@ public class ProducerConfig extends AbstractConfig {
 
     /** <code>allow.auto.create.topics</code> */
     public static final String ALLOW_AUTO_CREATE_TOPICS_CONFIG = "allow.auto.create.topics";
-    private static final String ALLOW_AUTO_CREATE_TOPICS_DOC = "Allow automatic topic creation on the broker when" +
-        " subscribing to or assigning a topic. A topic being subscribed to will be automatically created only if the" +
-        " broker allows for it using `auto.create.topics.enable` broker configuration. This configuration must" +
-        " be set to `false` when using brokers older than 0.11.0";
+    private static final String ALLOW_AUTO_CREATE_TOPICS_DOC = "The client-side (producer) permission to allow auto-topic creation. Both the client-side and the broker-side should enable auto-topic creation in order for a topic to be automatically created";
     public static final boolean DEFAULT_ALLOW_AUTO_CREATE_TOPICS = false;
 
     static {
