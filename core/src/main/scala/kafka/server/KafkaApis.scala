@@ -1038,10 +1038,6 @@ class KafkaApis(val requestChannel: RequestChannel,
           info(msg)
           createTopic(topic, config.numPartitions, config.defaultReplicationFactor)
         } else {
-          val msg = "A " + describeRequestContext(requestContext) +
-            " is trying to get metadata for a nonexistent topic: " + topic + " while auto topic creation is disabled"
-
-          info(msg)
           new MetadataResponse.TopicMetadata(Errors.UNKNOWN_TOPIC_OR_PARTITION, topic, false, java.util.Collections.emptyList())
         }
       }
