@@ -56,6 +56,11 @@ public class WeakMemoryPool implements MemoryPool {
             NavigableMap<Integer, LinkedList<WeakReference<ByteBuffer>>> tailMap = cache.tailMap(sizeBytes, true);
             LinkedList<Integer> keysToDelete = new LinkedList<>();
             for (Map.Entry<Integer, LinkedList<WeakReference<ByteBuffer>>> entry : tailMap.entrySet()) {
+                // If buffer is non-null; break out of the loop!
+                if (buffer != null) {
+                    break;
+                }
+
                 LinkedList<WeakReference<ByteBuffer>> queue = entry.getValue();
                 while (!queue.isEmpty() && buffer == null) {
                     buffer = queue.pop().get();
@@ -71,7 +76,14 @@ public class WeakMemoryPool implements MemoryPool {
                 cache.remove(key);
             }
         }
-        return buffer != null ? buffer : ByteBuffer.allocate(sizeBytes);
+
+        // If buffer is non-null, clear it before returning back to the user!
+        if (buffer != null) {
+            buffer.clear();
+            return buffer;
+        }
+
+        return ByteBuffer.allocate(sizeBytes);
     }
 
     /**
@@ -83,9 +95,6 @@ public class WeakMemoryPool implements MemoryPool {
         if (previouslyAllocated == null) {
             throw new IllegalArgumentException("the buffer to be released cannot be null!");
         }
-
-        // Clear the buffer before putting it back to the cache
-        previouslyAllocated.clear();
 
         synchronized (lock) {
             LinkedList<WeakReference<ByteBuffer>> queue =
