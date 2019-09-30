@@ -48,18 +48,14 @@ public class WeakMemoryPool implements MemoryPool {
      */
     @Override
     public ByteBuffer tryAllocate(int sizeBytes) {
-        if (sizeBytes <= 0) {
-            throw new IllegalArgumentException("The buffer size cannot be less than or equal to 0");
+        if (sizeBytes < 0) {
+            throw new IllegalArgumentException("The buffer size cannot be less than 0");
         }
         ByteBuffer buffer = null;
         synchronized (lock) {
             NavigableMap<Integer, LinkedList<WeakReference<ByteBuffer>>> tailMap = cache.tailMap(sizeBytes, true);
             LinkedList<Integer> keysToDelete = new LinkedList<>();
             for (Map.Entry<Integer, LinkedList<WeakReference<ByteBuffer>>> entry : tailMap.entrySet()) {
-                // If buffer is non-null; break out of the loop!
-                if (buffer != null) {
-                    break;
-                }
 
                 LinkedList<WeakReference<ByteBuffer>> queue = entry.getValue();
                 while (!queue.isEmpty() && buffer == null) {
@@ -68,6 +64,11 @@ public class WeakMemoryPool implements MemoryPool {
 
                 if (queue.isEmpty()) {
                     keysToDelete.add(entry.getKey());
+                }
+
+                // If buffer is non-null; break out of the loop!
+                if (buffer != null) {
+                    break;
                 }
             }
 
