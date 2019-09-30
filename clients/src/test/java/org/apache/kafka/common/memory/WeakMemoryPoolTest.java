@@ -31,7 +31,7 @@ public class WeakMemoryPoolTest {
         memoryPool.tryAllocate(-1);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testZeroAllocation() {
         WeakMemoryPool memoryPool = new WeakMemoryPool();
         memoryPool.tryAllocate(0);
