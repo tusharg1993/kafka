@@ -36,7 +36,7 @@ public class Schema extends Type {
      */
     public Schema(Field... fs) {
         this.fields = new BoundField[fs.length];
-        this.fieldsByName = new HashMap<>();
+        this.fieldsByName = new HashMap<>(fs.length);
         for (int i = 0; i < this.fields.length; i++) {
             Field def = fs[i];
             if (fieldsByName.containsKey(def.name))
@@ -107,7 +107,7 @@ public class Schema extends Type {
 
     /**
      * Get a field by its slot in the record array
-     * 
+     *
      * @param slot The slot at which this field sits
      * @return The field
      */
@@ -117,7 +117,7 @@ public class Schema extends Type {
 
     /**
      * Get a field by its name
-     * 
+     *
      * @param name The name of the field
      * @return The field
      */
