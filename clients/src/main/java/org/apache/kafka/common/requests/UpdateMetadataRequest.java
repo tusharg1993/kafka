@@ -16,6 +16,7 @@
  */
 package org.apache.kafka.common.requests;
 
+import java.util.Collections;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.errors.UnsupportedVersionException;
 import org.apache.kafka.common.network.ListenerName;
@@ -263,11 +264,13 @@ public class UpdateMetadataRequest extends AbstractControlRequest {
 
             this.basePartitionState = new BasePartitionState(controllerEpoch, leader, leaderEpoch, isr, zkVersion, replicas);
 
-            this.offlineReplicas = new ArrayList<>();
             if (struct.hasField(OFFLINE_REPLICAS)) {
                 Object[] offlineReplicasArray = struct.get(OFFLINE_REPLICAS);
+                this.offlineReplicas = new ArrayList<>(offlineReplicasArray.length);
                 for (Object r : offlineReplicasArray)
                     offlineReplicas.add((Integer) r);
+            } else {
+                this.offlineReplicas = Collections.emptyList();
             }
         }
 
@@ -369,9 +372,10 @@ public class UpdateMetadataRequest extends AbstractControlRequest {
             }
         }
 
-        Set<Broker> liveBrokers = new HashSet<>();
+        Object[] liveBrokersArray = struct.get(LIVE_BROKERS);
+        Set<Broker> liveBrokers = new HashSet<>(liveBrokersArray.length);
 
-        for (Object brokerDataObj : struct.get(LIVE_BROKERS)) {
+        for (Object brokerDataObj : liveBrokersArray) {
             Struct brokerData = (Struct) brokerDataObj;
             int brokerId = brokerData.get(BROKER_ID);
 
@@ -384,8 +388,9 @@ public class UpdateMetadataRequest extends AbstractControlRequest {
                 endPoints.add(new EndPoint(host, port, securityProtocol, ListenerName.forSecurityProtocol(securityProtocol)));
                 liveBrokers.add(new Broker(brokerId, endPoints, null));
             } else { // V1, V2 or V3
-                List<EndPoint> endPoints = new ArrayList<>();
-                for (Object endPointDataObj : brokerData.get(ENDPOINTS)) {
+                Object[] endPointsArray = brokerData.get(ENDPOINTS);
+                List<EndPoint> endPoints = new ArrayList<>(endPointsArray.length);
+                for (Object endPointDataObj : endPointsArray) {
                     Struct endPointData = (Struct) endPointDataObj;
                     int port = endPointData.get(PORT);
                     String host = endPointData.get(HOST);
