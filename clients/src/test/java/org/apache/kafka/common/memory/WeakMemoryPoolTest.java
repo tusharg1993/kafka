@@ -45,6 +45,8 @@ public class WeakMemoryPoolTest {
 
     @Test
     public void testAllocationMemorySize() {
+        // Start from clean state to avoid flakiness
+        System.gc();
         WeakMemoryPool pool = new WeakMemoryPool();
         long freeMemory = Runtime.getRuntime().freeMemory();
         ByteBuffer buffer1 = pool.tryAllocate(FORTY_MEGABYTES + 1);

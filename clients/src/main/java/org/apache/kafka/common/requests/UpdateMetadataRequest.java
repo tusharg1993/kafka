@@ -362,7 +362,7 @@ public class UpdateMetadataRequest extends AbstractControlRequest {
 
     // LIKAFKA-18349 - Cache the UpdateMetadataRequest struct to reduce memory usage
     private Struct struct = null;
-    private Lock structLock = new ReentrantLock();
+    private final Lock structLock = new ReentrantLock();
 
     private UpdateMetadataRequest(short version, int controllerId, int controllerEpoch, long brokerEpoch,
                                   Map<TopicPartition, PartitionState> partitionStates, Set<Broker> liveBrokers) {
@@ -507,6 +507,10 @@ public class UpdateMetadataRequest extends AbstractControlRequest {
                     brokersData.add(brokerData);
                 }
                 struct.set(LIVE_BROKERS, brokersData.toArray());
+                // Cache the serialized payload
+                ByteBuffer buffer = ByteBuffer.allocate(struct.sizeOf());
+                struct.writeTo(buffer);
+                struct.setSerialized(buffer);
                 this.struct = struct;
             }
             return struct;

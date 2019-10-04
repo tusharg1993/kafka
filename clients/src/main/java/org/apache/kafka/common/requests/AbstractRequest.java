@@ -17,8 +17,8 @@
 package org.apache.kafka.common.requests;
 
 import org.apache.kafka.common.errors.UnsupportedVersionException;
-import org.apache.kafka.common.network.NetworkSend;
 import org.apache.kafka.common.network.Send;
+import org.apache.kafka.common.network.StructSend;
 import org.apache.kafka.common.protocol.ApiKeys;
 import org.apache.kafka.common.protocol.Errors;
 import org.apache.kafka.common.protocol.types.Struct;
@@ -93,7 +93,7 @@ public abstract class AbstractRequest extends AbstractRequestResponse {
     }
 
     public Send toSend(String destination, RequestHeader header) {
-        return new NetworkSend(destination, serialize(header));
+        return new StructSend(destination, header.toStruct(), toStruct());
     }
 
     /**

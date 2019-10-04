@@ -16,8 +16,8 @@
  */
 package org.apache.kafka.common.requests;
 
-import org.apache.kafka.common.network.NetworkSend;
 import org.apache.kafka.common.network.Send;
+import org.apache.kafka.common.network.StructSend;
 import org.apache.kafka.common.protocol.ApiKeys;
 import org.apache.kafka.common.protocol.Errors;
 import org.apache.kafka.common.protocol.types.Struct;
@@ -31,7 +31,7 @@ public abstract class AbstractResponse extends AbstractRequestResponse {
     public static final int DEFAULT_THROTTLE_TIME = 0;
 
     protected Send toSend(String destination, ResponseHeader header, short apiVersion) {
-        return new NetworkSend(destination, serialize(apiVersion, header));
+        return new StructSend(destination, header.toStruct(), toStruct(apiVersion));
     }
 
     /**

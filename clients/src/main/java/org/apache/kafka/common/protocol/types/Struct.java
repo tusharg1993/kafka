@@ -28,6 +28,7 @@ import java.util.Objects;
 public class Struct {
     private final Schema schema;
     private final Object[] values;
+    private volatile ByteBuffer serialized = null;
 
     Struct(Schema schema, Object[] values) {
         this.schema = schema;
@@ -37,6 +38,26 @@ public class Struct {
     public Struct(Schema schema) {
         this.schema = schema;
         this.values = new Object[this.schema.numFields()];
+    }
+
+    /**
+     * Returns the serialized byte buffer
+     */
+    public ByteBuffer getSerialized() {
+        if (serialized == null) {
+            return null;
+        }
+        return serialized.duplicate();
+    }
+
+    /**
+     * Sets the serialized byte buffer
+     */
+    public void setSerialized(ByteBuffer serialized) {
+        if (serialized == null) {
+            throw new NullPointerException("The input serialized byte buffer cannot be null");
+        }
+        this.serialized = serialized;
     }
 
     /**
