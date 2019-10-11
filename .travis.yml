@@ -44,7 +44,7 @@ cache:
 # This will triger publishing artifacts to bintray upon the creation of a new tag in the "x.y.z.w" format.
 deploy:
   provider: script
-  script: ./gradlew -Pversion=0.0.0.3 uploadArchivesAll
+  script: ./gradlew -Pversion=0.0.0.4 uploadArchivesAll -x :streams:compileJava -x :streams:processResources -x :streams:classes -x streams:copyDependantLibs -x :streams:jar -x :streams:streams-scala:compileJava -x :streams:streams-scala:compileScala -x :streams:streams-scala:uploadArchives -x :streams:uploadArchives -x :streams:test-utils:uploadArchives :streams:examples:uploadArchives -x :streams:streams-scala:jar -x :streams:streams-scala:test -x :streams:streams-scala:srcJar -x :streams:streams-scala:docsJar -x :connect:api:uploadArchives -x :connect:basic-auth-extension:uploadArchives -x :connect:file:uploadArchives -x :connect:json:uploadArchives -x :connect:runtime:uploadArchives -x :connect:transforms:uploadArchives
   skip_cleanup: true
   on:
     all_branches: true
