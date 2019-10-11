@@ -24,8 +24,12 @@ install: true
 # Excluded integration tests for now because Travis will hit build timeout (50 minutes) when including them.
 # Also excluded streams unitTest because they often fail with "pure virtual method called" error (KAFKA-3502).
 # TODO: re-enable these tests when the mentioned issues are resolved.
+#script:
+#  - ./gradlew clean compileJava compileScala compileTestJava compileTestScala checkstyleMain checkstyleTest spotbugsMain unitTest -x :streams:unitTest rat --no-daemon -PxmlFindBugsReport=true -PtestLoggingEvents=skipped,failed
+
 script:
-  - ./gradlew clean compileJava compileScala compileTestJava compileTestScala checkstyleMain checkstyleTest spotbugsMain unitTest -x :streams:unitTest rat --no-daemon -PxmlFindBugsReport=true -PtestLoggingEvents=skipped,failed
+  - ./gradlew clean
+
 
 before_cache:
   - rm -f  $HOME/.gradle/caches/modules-2/modules-2.lock
@@ -40,7 +44,7 @@ cache:
 # This will triger publishing artifacts to bintray upon the creation of a new tag in the "x.y.z.w" format.
 deploy:
   provider: script
-  script: ./gradlew -Pversion=0.0.0.2 uploadArchivesAll
+  script: ./gradlew -Pversion=0.0.0.3 uploadArchivesAll
   skip_cleanup: true
   on:
     all_branches: true
