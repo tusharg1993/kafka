@@ -40,7 +40,7 @@ cache:
 # This will triger publishing artifacts to bintray upon the creation of a new tag in the "x.y.z.w" format.
 deploy:
   provider: script
-  script: ./gradlew -Pversion=0.0.0.1 uploadArchivesAll
+  script: ./gradlew -Pversion=0.0.0.2 uploadArchivesAll
   skip_cleanup: true
   on:
     all_branches: true
