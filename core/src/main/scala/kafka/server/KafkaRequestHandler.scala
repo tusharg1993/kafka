@@ -204,7 +204,11 @@ class BrokerTopicMetrics(name: Option[String]) extends KafkaMetricsGroup {
 
   def messagesInRate = metricTypeMap.get(BrokerTopicStats.MessagesInPerSec).meter()
 
+  val messagesInTotal = newCounter(BrokerTopicStats.MessagesInTotal, tags)
+
   def bytesInRate = metricTypeMap.get(BrokerTopicStats.BytesInPerSec).meter()
+
+  val bytesInTotal = newCounter(BrokerTopicStats.BytesInTotal, tags)
 
   def bytesOutRate = metricTypeMap.get(BrokerTopicStats.BytesOutPerSec).meter()
 
@@ -244,12 +248,18 @@ class BrokerTopicMetrics(name: Option[String]) extends KafkaMetricsGroup {
       meter.close()
   }
 
-  def close(): Unit = metricTypeMap.values.foreach(_.close())
+  def close(): Unit = {
+    metricTypeMap.values.foreach(_.close())
+    removeMetric(BrokerTopicStats.MessagesInTotal, tags)
+    removeMetric(BrokerTopicStats.BytesInTotal, tags)
+  }
 }
 
 object BrokerTopicStats {
   val MessagesInPerSec = "MessagesInPerSec"
+  val MessagesInTotal = "MessagesInTotal"
   val BytesInPerSec = "BytesInPerSec"
+  val BytesInTotal = "BytesInTotal"
   val BytesOutPerSec = "BytesOutPerSec"
   val BytesRejectedPerSec = "BytesRejectedPerSec"
   val ReplicationBytesInPerSec = "ReplicationBytesInPerSec"
