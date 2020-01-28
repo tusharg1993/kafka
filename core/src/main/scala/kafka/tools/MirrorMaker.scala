@@ -35,6 +35,7 @@ import org.apache.kafka.common.{KafkaException, TopicPartition}
 import org.apache.kafka.common.serialization.ByteArrayDeserializer
 import org.apache.kafka.common.utils.Utils
 import org.apache.kafka.common.errors.WakeupException
+import org.apache.kafka.common.header.Headers
 import org.apache.kafka.common.header.internals.{RecordHeader, RecordHeaders}
 import org.apache.kafka.common.record.RecordBatch
 
@@ -72,6 +73,20 @@ object MirrorMaker extends Logging with KafkaMetricsGroup {
   @volatile private var exitingOnSendFailure: Boolean = false
   private var passThroughEnabled: Boolean = false
   private val PASS_THROUGH_MAGIC_VALUE = "__passThroughMagicValue";
+
+  val recordHeadersV1: Headers = {
+    val magicValueV1 = Array[Byte] {
+      RecordBatch.MAGIC_VALUE_V1
+    }
+    new RecordHeaders().add(new RecordHeader(PASS_THROUGH_MAGIC_VALUE, magicValueV1))
+  }
+
+  val recordHeadersV2: Headers = {
+    val magicValueV2 = Array[Byte] {
+      RecordBatch.MAGIC_VALUE_V2
+    }
+    new RecordHeaders().add(new RecordHeader(PASS_THROUGH_MAGIC_VALUE, magicValueV2))
+  }
 
   // If a message send failed after retries are exhausted. The offset of the messages will also be removed from
   // the unacked offset list to avoid offset commit being stuck on that offset. In this case, the offset of that
@@ -615,13 +630,12 @@ object MirrorMaker extends Logging with KafkaMetricsGroup {
   private[tools] object passThroughMirrorMakerMessageHandler extends MirrorMakerMessageHandler {
     override def handle(record: BaseConsumerRecord): util.List[ProducerRecord[Array[Byte], Array[Byte]]] = {
       val timestamp: java.lang.Long = if (record.timestamp == RecordBatch.NO_TIMESTAMP) null else record.timestamp
-      val recordHeaders: RecordHeaders = new RecordHeaders()
-      val magicValue = Array[Byte] {
-        record.magic
+      // It is assumed that we don't have message format V0 anymore at Linkedin
+      if (record.magic.equals(RecordBatch.MAGIC_VALUE_V1)) {
+        Collections.singletonList(new ProducerRecord(record.topic, null, timestamp, record.key, record.value, recordHeadersV1))
+      } else {
+        Collections.singletonList(new ProducerRecord(record.topic, null, timestamp, record.key, record.value, recordHeadersV2))
       }
-      val passThroughHeader: RecordHeader = new RecordHeader(PASS_THROUGH_MAGIC_VALUE, magicValue)
-      recordHeaders.add(passThroughHeader)
-      Collections.singletonList(new ProducerRecord(record.topic, null, timestamp, record.key, record.value, recordHeaders))
     }
   }
 

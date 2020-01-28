@@ -19,7 +19,11 @@ package org.apache.kafka.clients.consumer;
 import org.apache.kafka.common.header.Headers;
 import org.apache.kafka.common.record.TimestampType;
 
-
+/**
+ * In case of passthrough, value contains the message batch while the key is null
+ * @param <K> null
+ * @param <V> batch of messages
+ */
 public class PassThroughConsumerRecord<K, V> extends ConsumerRecord<K, V> {
     private final byte magic;
 
