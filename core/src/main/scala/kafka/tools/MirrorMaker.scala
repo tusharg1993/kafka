@@ -633,8 +633,10 @@ object MirrorMaker extends Logging with KafkaMetricsGroup {
       // It is assumed that we don't have message format V0 anymore at Linkedin
       if (record.magic.equals(RecordBatch.MAGIC_VALUE_V1)) {
         Collections.singletonList(new ProducerRecord(record.topic, null, timestamp, record.key, record.value, recordHeadersV1))
-      } else {
+      } else if (record.magic.equals(RecordBatch.MAGIC_VALUE_V2)) {
         Collections.singletonList(new ProducerRecord(record.topic, null, timestamp, record.key, record.value, recordHeadersV2))
+      } else {
+        throw new IllegalArgumentException("Record Batch with magic value : " + record.magic + ", is not supported in PassThrough mode")
       }
     }
   }
