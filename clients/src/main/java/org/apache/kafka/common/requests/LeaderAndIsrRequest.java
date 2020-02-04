@@ -118,7 +118,7 @@ public class LeaderAndIsrRequest extends AbstractControlRequest {
     private static final Schema LEADER_AND_ISR_REQUEST_V2 = new Schema(
             CONTROLLER_ID,
             CONTROLLER_EPOCH,
-            BROKER_EPOCH,
+            MAX_BROKER_EPOCH,
             TOPIC_STATES_V2,
             LIVE_LEADERS_V0);
 
@@ -130,16 +130,16 @@ public class LeaderAndIsrRequest extends AbstractControlRequest {
         private final Map<TopicPartition, PartitionState> partitionStates;
         private final Set<Node> liveLeaders;
 
-        public Builder(short version, int controllerId, int controllerEpoch, long brokerEpoch,
+        public Builder(short version, int controllerId, int controllerEpoch, long maxBrokerEpoch,
                        Map<TopicPartition, PartitionState> partitionStates, Set<Node> liveLeaders) {
-            super(ApiKeys.LEADER_AND_ISR, version, controllerId, controllerEpoch, brokerEpoch);
+            super(ApiKeys.LEADER_AND_ISR, version, controllerId, controllerEpoch, maxBrokerEpoch);
             this.partitionStates = partitionStates;
             this.liveLeaders = liveLeaders;
         }
 
         @Override
         public LeaderAndIsrRequest build(short version) {
-            return new LeaderAndIsrRequest(controllerId, controllerEpoch, brokerEpoch, partitionStates, liveLeaders, version);
+            return new LeaderAndIsrRequest(controllerId, controllerEpoch, maxBrokerEpoch, partitionStates, liveLeaders, version);
         }
 
         @Override
@@ -148,7 +148,7 @@ public class LeaderAndIsrRequest extends AbstractControlRequest {
             bld.append("(type=LeaderAndIsRequest")
                 .append(", controllerId=").append(controllerId)
                 .append(", controllerEpoch=").append(controllerEpoch)
-                .append(", brokerEpoch=").append(brokerEpoch)
+                .append(", brokerEpoch=").append(maxBrokerEpoch)
                 .append(", partitionStates=").append(partitionStates)
                 .append(", liveLeaders=(").append(Utils.join(liveLeaders, ", ")).append(")")
                 .append(")");
@@ -210,7 +210,7 @@ public class LeaderAndIsrRequest extends AbstractControlRequest {
         Struct struct = new Struct(ApiKeys.LEADER_AND_ISR.requestSchema(version));
         struct.set(CONTROLLER_ID, controllerId);
         struct.set(CONTROLLER_EPOCH, controllerEpoch);
-        struct.setIfExists(BROKER_EPOCH, brokerEpoch);
+        struct.setIfExists(MAX_BROKER_EPOCH, maxBrokerEpoch);
 
         if (struct.hasField(TOPIC_STATES)) {
             Map<String, Map<Integer, PartitionState>> topicStates = CollectionUtils.groupPartitionDataByTopic(partitionStates);

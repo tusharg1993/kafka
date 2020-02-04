@@ -175,7 +175,7 @@ public class UpdateMetadataRequest extends AbstractControlRequest {
     private static final Schema UPDATE_METADATA_REQUEST_V5 = new Schema(
             CONTROLLER_ID,
             CONTROLLER_EPOCH,
-            BROKER_EPOCH,
+            MAX_BROKER_EPOCH,
             TOPIC_STATES_V5,
             LIVE_BROKERS_V3);
 
@@ -193,9 +193,9 @@ public class UpdateMetadataRequest extends AbstractControlRequest {
         // LIKAFKA-18349 - Cache the UpdateMetadataRequest Objects to reduce memory usage
         private final Map<Short, UpdateMetadataRequest> requestCache = new HashMap<>();
 
-        public Builder(short version, int controllerId, int controllerEpoch, long brokerEpoch,
+        public Builder(short version, int controllerId, int controllerEpoch, long maxBrokerEpoch,
                        Map<TopicPartition, PartitionState> partitionStates, Set<Broker> liveBrokers) {
-            super(ApiKeys.UPDATE_METADATA, version, controllerId, controllerEpoch, brokerEpoch);
+            super(ApiKeys.UPDATE_METADATA, version, controllerId, controllerEpoch, maxBrokerEpoch);
             this.partitionStates = partitionStates;
             this.liveBrokers = liveBrokers;
         }
@@ -215,7 +215,7 @@ public class UpdateMetadataRequest extends AbstractControlRequest {
                         }
                     }
                     updateMetadataRequest =
-                        new UpdateMetadataRequest(version, controllerId, controllerEpoch, brokerEpoch, partitionStates,
+                        new UpdateMetadataRequest(version, controllerId, controllerEpoch, maxBrokerEpoch, partitionStates,
                             liveBrokers);
                     requestCache.put(version, updateMetadataRequest);
                 }
@@ -234,7 +234,7 @@ public class UpdateMetadataRequest extends AbstractControlRequest {
             bld.append("(type: UpdateMetadataRequest=").
                 append(", controllerId=").append(controllerId).
                 append(", controllerEpoch=").append(controllerEpoch).
-                append(", brokerEpoch=").append(brokerEpoch).
+                append(", brokerEpoch=").append(maxBrokerEpoch).
                 append(", liveBrokers=").append(Utils.join(liveBrokers, ", ")).
                 append(")");
 
@@ -446,7 +446,7 @@ public class UpdateMetadataRequest extends AbstractControlRequest {
                 Struct struct = new Struct(ApiKeys.UPDATE_METADATA.requestSchema(version));
                 struct.set(CONTROLLER_ID, controllerId);
                 struct.set(CONTROLLER_EPOCH, controllerEpoch);
-                struct.setIfExists(BROKER_EPOCH, brokerEpoch);
+                struct.setIfExists(MAX_BROKER_EPOCH, maxBrokerEpoch);
 
                 if (struct.hasField(TOPIC_STATES)) {
                     Map<String, Map<Integer, PartitionState>> topicStates = CollectionUtils.groupPartitionDataByTopic(partitionStates);

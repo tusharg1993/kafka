@@ -60,7 +60,7 @@ public class StopReplicaRequest extends AbstractControlRequest {
     private static final Schema STOP_REPLICA_REQUEST_V1 = new Schema(
             CONTROLLER_ID,
             CONTROLLER_EPOCH,
-            BROKER_EPOCH,
+            MAX_BROKER_EPOCH,
             DELETE_PARTITIONS,
             PARTITIONS_V1);
 
@@ -73,16 +73,16 @@ public class StopReplicaRequest extends AbstractControlRequest {
         private final boolean deletePartitions;
         private final Collection<TopicPartition> partitions;
 
-        public Builder(short version, int controllerId, int controllerEpoch, long brokerEpoch, boolean deletePartitions,
+        public Builder(short version, int controllerId, int controllerEpoch, long maxBrokerEpoch, boolean deletePartitions,
                        Collection<TopicPartition> partitions) {
-            super(ApiKeys.STOP_REPLICA, version, controllerId, controllerEpoch, brokerEpoch);
+            super(ApiKeys.STOP_REPLICA, version, controllerId, controllerEpoch, maxBrokerEpoch);
             this.deletePartitions = deletePartitions;
             this.partitions = partitions;
         }
 
         @Override
         public StopReplicaRequest build(short version) {
-            return new StopReplicaRequest(controllerId, controllerEpoch, brokerEpoch,
+            return new StopReplicaRequest(controllerId, controllerEpoch, maxBrokerEpoch,
                     deletePartitions, partitions, version);
         }
 
@@ -93,7 +93,7 @@ public class StopReplicaRequest extends AbstractControlRequest {
                 append(", controllerId=").append(controllerId).
                 append(", controllerEpoch=").append(controllerEpoch).
                 append(", deletePartitions=").append(deletePartitions).
-                append(", brokerEpoch=").append(brokerEpoch).
+                append(", brokerEpoch=").append(maxBrokerEpoch).
                 append(", partitions=").append(Utils.join(partitions, ",")).
                 append(")");
             return bld.toString();
@@ -172,7 +172,7 @@ public class StopReplicaRequest extends AbstractControlRequest {
 
         struct.set(CONTROLLER_ID, controllerId);
         struct.set(CONTROLLER_EPOCH, controllerEpoch);
-        struct.setIfExists(BROKER_EPOCH, brokerEpoch);
+        struct.setIfExists(MAX_BROKER_EPOCH, maxBrokerEpoch);
         struct.set(DELETE_PARTITIONS, deletePartitions);
 
         if (version() > 0) { // V1
