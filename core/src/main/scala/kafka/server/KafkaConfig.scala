@@ -50,6 +50,7 @@ object Defaults {
   val ZkMaxInFlightRequests = 10
 
   /** ********* General Configuration ***********/
+  val CacheableBrokerEpochEnable = false
   val BrokerIdGenerationEnable = true
   val MaxReservedBrokerId = 1000
   val BrokerId = -1
@@ -285,6 +286,7 @@ object KafkaConfig {
   val ZkEnableSecureAclsProp = "zookeeper.set.acl"
   val ZkMaxInFlightRequestsProp = "zookeeper.max.in.flight.requests"
   /** ********* General Configuration ***********/
+  val CacheableBrokerEpochEnableProp = "cacheable.broker.epoch.enable"
   val BrokerIdGenerationEnableProp = "broker.id.generation.enable"
   val MaxReservedBrokerIdProp = "reserved.broker.max.id"
   val BrokerIdProp = "broker.id"
@@ -535,6 +537,7 @@ object KafkaConfig {
   val ZkEnableSecureAclsDoc = "Set client to use secure ACLs"
   val ZkMaxInFlightRequestsDoc = "The maximum number of unacknowledged requests the client will send to Zookeeper before blocking."
   /** ********* General Configuration ***********/
+  val CacheableBrokerEpochEnableDoc = s"Enable using the global maximum broker epoch in UpdateMetadataRequest so that the request is cachable in controller."
   val BrokerIdGenerationEnableDoc = s"Enable automatic broker id generation on the server. When enabled the value configured for $MaxReservedBrokerIdProp should be reviewed."
   val MaxReservedBrokerIdDoc = "Max number that can be used for a broker.id"
   val BrokerIdDoc = "The broker id for this server. If unset, a unique broker id will be generated." +
@@ -921,6 +924,7 @@ object KafkaConfig {
       .define(ZkMaxInFlightRequestsProp, INT, Defaults.ZkMaxInFlightRequests, atLeast(1), HIGH, ZkMaxInFlightRequestsDoc)
 
       /** ********* General Configuration ***********/
+      .define(CacheableBrokerEpochEnableProp, BOOLEAN, Defaults.CacheableBrokerEpochEnable, MEDIUM, CacheableBrokerEpochEnableDoc)
       .define(BrokerIdGenerationEnableProp, BOOLEAN, Defaults.BrokerIdGenerationEnable, MEDIUM, BrokerIdGenerationEnableDoc)
       .define(MaxReservedBrokerIdProp, INT, Defaults.MaxReservedBrokerId, atLeast(0), MEDIUM, MaxReservedBrokerIdDoc)
       .define(BrokerIdProp, INT, Defaults.BrokerId, HIGH, BrokerIdDoc)
@@ -1229,6 +1233,7 @@ class KafkaConfig(val props: java.util.Map[_, _], doLog: Boolean, dynamicConfigO
   val zkMaxInFlightRequests: Int = getInt(KafkaConfig.ZkMaxInFlightRequestsProp)
   /** ********* General Configuration ***********/
   val brokerIdGenerationEnable: Boolean = getBoolean(KafkaConfig.BrokerIdGenerationEnableProp)
+  val cacheableBrokerEpochEnable: Boolean = getBoolean(KafkaConfig.CacheableBrokerEpochEnableProp)
   val maxReservedBrokerId: Int = getInt(KafkaConfig.MaxReservedBrokerIdProp)
   var brokerId: Int = getInt(KafkaConfig.BrokerIdProp)
 
