@@ -188,7 +188,6 @@ public class UpdateMetadataRequest extends AbstractControlRequest {
             TOPIC_STATES_V5,
             LIVE_BROKERS_V3);
 
-
     public static Schema[] schemaVersions() {
         return new Schema[] {UPDATE_METADATA_REQUEST_V0, UPDATE_METADATA_REQUEST_V1, UPDATE_METADATA_REQUEST_V2,
             UPDATE_METADATA_REQUEST_V3, UPDATE_METADATA_REQUEST_V4, UPDATE_METADATA_REQUEST_V5, UPDATE_METADATA_REQUEST_V6};

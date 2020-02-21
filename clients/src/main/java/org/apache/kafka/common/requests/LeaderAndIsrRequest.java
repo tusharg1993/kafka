@@ -164,8 +164,6 @@ public class LeaderAndIsrRequest extends AbstractControlRequest {
                 .append(", liveLeaders=(").append(Utils.join(liveLeaders, ", ")).append(")")
                 .append(")");
             return bld.toString();
-
-
         }
     }
 

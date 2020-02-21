@@ -20,7 +20,7 @@
   // Version 1 adds IsNew.
   //
   // Version 2 adds broker epoch and reorganizes the partitions by topic.
-  // Version 3 adds the maxBrokerEpoch
+  // Version 3 adds the max broker epoch to make the UpdateMetadataRequest cacheable
   "validVersions": "0-3",
   "fields": [
     { "name": "ControllerId", "type": "int32", "versions": "0+", "entityType": "brokerId",
