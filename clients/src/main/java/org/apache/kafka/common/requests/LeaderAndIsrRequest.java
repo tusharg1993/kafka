@@ -283,6 +283,7 @@ public class LeaderAndIsrRequest extends AbstractControlRequest {
             case 0:
             case 1:
             case 2:
+            case 3:
                 return new LeaderAndIsrResponse(error, responses);
             default:
                 throw new IllegalArgumentException(String.format("Version %d is not valid. Valid versions for %s are 0 to %d",

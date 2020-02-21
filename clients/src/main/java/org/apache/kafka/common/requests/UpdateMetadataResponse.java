@@ -39,8 +39,8 @@ public class UpdateMetadataResponse extends AbstractResponse {
         return new Schema[]{UPDATE_METADATA_RESPONSE_V0, UPDATE_METADATA_RESPONSE_V1, UPDATE_METADATA_RESPONSE_V2,
             UPDATE_METADATA_RESPONSE_V3, UPDATE_METADATA_RESPONSE_V4, UPDATE_METADATA_RESPONSE_V5, UPDATE_METADATA_RESPONSE_V6};
     }
-
-	/**
+    
+    /**
      * Possible error code:
      *
      * STALE_CONTROLLER_EPOCH (11)

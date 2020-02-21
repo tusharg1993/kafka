@@ -191,7 +191,7 @@ public class UpdateMetadataRequest extends AbstractControlRequest {
 
     public static Schema[] schemaVersions() {
         return new Schema[] {UPDATE_METADATA_REQUEST_V0, UPDATE_METADATA_REQUEST_V1, UPDATE_METADATA_REQUEST_V2,
-            UPDATE_METADATA_REQUEST_V3, UPDATE_METADATA_REQUEST_V4, UPDATE_METADATA_REQUEST_V5};
+            UPDATE_METADATA_REQUEST_V3, UPDATE_METADATA_REQUEST_V4, UPDATE_METADATA_REQUEST_V5, UPDATE_METADATA_REQUEST_V6};
     }
 
     public static class Builder extends AbstractControlRequest.Builder<UpdateMetadataRequest> {
@@ -530,7 +530,7 @@ public class UpdateMetadataRequest extends AbstractControlRequest {
     @Override
     public AbstractResponse getErrorResponse(int throttleTimeMs, Throwable e) {
         short versionId = version();
-        if (versionId <= 5)
+        if (versionId <= 6)
             return new UpdateMetadataResponse(Errors.forException(e));
         else
             throw new IllegalArgumentException(String.format("Version %d is not valid. Valid versions for %s are 0 to %d",

@@ -157,6 +157,7 @@ public class StopReplicaRequest extends AbstractControlRequest {
         switch (versionId) {
             case 0:
             case 1:
+            case 2:
                 return new StopReplicaResponse(error, responses);
             default:
                 throw new IllegalArgumentException(String.format("Version %d is not valid. Valid versions for %s are 0 to %d",
