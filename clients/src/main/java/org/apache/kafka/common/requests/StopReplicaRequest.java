@@ -60,29 +60,38 @@ public class StopReplicaRequest extends AbstractControlRequest {
     private static final Schema STOP_REPLICA_REQUEST_V1 = new Schema(
             CONTROLLER_ID,
             CONTROLLER_EPOCH,
+            BROKER_EPOCH,
+            DELETE_PARTITIONS,
+            PARTITIONS_V1);
+
+    // STOP_REPLICA_REQUEST_V2 replaced the BROKER_EPOCH field in V1 with a MAX_BROKER_EPOCH. The MAX_BROKER_EPOCH
+    // field is intended to make the UpdateMetadataRequest have the same payload for all brokers, and thus be cacheable on the controller.
+    private static final Schema STOP_REPLICA_REQUEST_V2 = new Schema(
+            CONTROLLER_ID,
+            CONTROLLER_EPOCH,
             MAX_BROKER_EPOCH,
             DELETE_PARTITIONS,
             PARTITIONS_V1);
 
 
     public static Schema[] schemaVersions() {
-        return new Schema[] {STOP_REPLICA_REQUEST_V0, STOP_REPLICA_REQUEST_V1};
+        return new Schema[] {STOP_REPLICA_REQUEST_V0, STOP_REPLICA_REQUEST_V1, STOP_REPLICA_REQUEST_V2};
     }
 
     public static class Builder extends AbstractControlRequest.Builder<StopReplicaRequest> {
         private final boolean deletePartitions;
         private final Collection<TopicPartition> partitions;
 
-        public Builder(short version, int controllerId, int controllerEpoch, long maxBrokerEpoch, boolean deletePartitions,
+        public Builder(short version, int controllerId, int controllerEpoch, long brokerEpoch, long maxBrokerEpoch, boolean deletePartitions,
                        Collection<TopicPartition> partitions) {
-            super(ApiKeys.STOP_REPLICA, version, controllerId, controllerEpoch, maxBrokerEpoch);
+            super(ApiKeys.STOP_REPLICA, version, controllerId, controllerEpoch, brokerEpoch, maxBrokerEpoch);
             this.deletePartitions = deletePartitions;
             this.partitions = partitions;
         }
 
         @Override
         public StopReplicaRequest build(short version) {
-            return new StopReplicaRequest(controllerId, controllerEpoch, maxBrokerEpoch,
+            return new StopReplicaRequest(controllerId, controllerEpoch, brokerEpoch, maxBrokerEpoch,
                     deletePartitions, partitions, version);
         }
 
@@ -93,7 +102,8 @@ public class StopReplicaRequest extends AbstractControlRequest {
                 append(", controllerId=").append(controllerId).
                 append(", controllerEpoch=").append(controllerEpoch).
                 append(", deletePartitions=").append(deletePartitions).
-                append(", brokerEpoch=").append(maxBrokerEpoch).
+                append(", brokerEpoch=").append(brokerEpoch).
+                append(", maxBrokerEpoch=").append(maxBrokerEpoch).
                 append(", partitions=").append(Utils.join(partitions, ",")).
                 append(")");
             return bld.toString();
@@ -172,6 +182,7 @@ public class StopReplicaRequest extends AbstractControlRequest {
 
         struct.set(CONTROLLER_ID, controllerId);
         struct.set(CONTROLLER_EPOCH, controllerEpoch);
+        struct.setIfExists(BROKER_EPOCH, brokerEpoch);
         struct.setIfExists(MAX_BROKER_EPOCH, maxBrokerEpoch);
         struct.set(DELETE_PARTITIONS, deletePartitions);
 
