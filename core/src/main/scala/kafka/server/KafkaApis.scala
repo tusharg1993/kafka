@@ -192,7 +192,7 @@ class KafkaApis(val requestChannel: RequestChannel,
     }
 
     authorizeClusterAction(request)
-    if (isBrokerEpochStale(leaderAndIsrRequest.maxBrokerEpoch())) {
+    if (isBrokerEpochStale(leaderAndIsrRequest.brokerEpoch(), leaderAndIsrRequest.maxBrokerEpoch())) {
       // When the broker restarts very quickly, it is possible for this broker to receive request intended
       // for its previous generation so the broker should skip the stale request.
       info("Received LeaderAndIsr request with broker epoch " +
@@ -210,7 +210,7 @@ class KafkaApis(val requestChannel: RequestChannel,
     // stop serving data to clients for the topic being deleted
     val stopReplicaRequest = request.body[StopReplicaRequest]
     authorizeClusterAction(request)
-    if (isBrokerEpochStale(stopReplicaRequest.maxBrokerEpoch())) {
+    if (isBrokerEpochStale(stopReplicaRequest.brokerEpoch(), stopReplicaRequest.maxBrokerEpoch())) {
       // When the broker restarts very quickly, it is possible for this broker to receive request intended
       // for its previous generation so the broker should skip the stale request.
       info("Received stop replica request with broker epoch " +
@@ -240,7 +240,7 @@ class KafkaApis(val requestChannel: RequestChannel,
     val updateMetadataRequest = request.body[UpdateMetadataRequest]
 
     authorizeClusterAction(request)
-    if (isBrokerEpochStale(updateMetadataRequest.maxBrokerEpoch())) {
+    if (isBrokerEpochStale(updateMetadataRequest.brokerEpoch(), updateMetadataRequest.maxBrokerEpoch())) {
       // When the broker restarts very quickly, it is possible for this broker to receive request intended
       // for its previous generation so the broker should skip the stale request.
       info("Received update metadata request with broker epoch " +
@@ -2638,13 +2638,16 @@ class KafkaApis(val requestChannel: RequestChannel,
     requestChannel.sendResponse(response)
   }
 
-  private def isBrokerEpochStale(maxBrokerEpochInRequest: Long): Boolean = {
-    // Broker epoch in LeaderAndIsr/UpdateMetadata/StopReplica request is unknown
-    // if the controller hasn't been upgraded to use KIP-380
-    if (maxBrokerEpochInRequest == AbstractControlRequest.UNKNOWN_BROKER_EPOCH) false
-    else {
+  private def isBrokerEpochStale(brokerEpochInRequest: Long, maxBrokerEpochInRequest: Long): Boolean = {
+    if (maxBrokerEpochInRequest != AbstractControlRequest.UNKNOWN_BROKER_EPOCH)  {
       maxBrokerEpochInRequest < controller.brokerEpoch
     }
+    else if (brokerEpochInRequest != AbstractControlRequest.UNKNOWN_BROKER_EPOCH) {
+      val curBrokerEpoch = controller.brokerEpoch
+      if (brokerEpochInRequest < curBrokerEpoch) true
+      else if (brokerEpochInRequest == curBrokerEpoch) false
+      else throw new IllegalStateException(s"Epoch $brokerEpochInRequest larger than current broker epoch $curBrokerEpoch")
+    } else false
   }
 
   private def observeRequestResponse(request: RequestChannel.Request, response: AbstractResponse): Unit = {
