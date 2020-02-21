@@ -521,11 +521,22 @@ abstract class AbstractControllerBrokerRequestBatch(config: KafkaConfig,
       }
     }
 
-    val maxBrokerEpoch = controllerContext.maxBrokerEpoch
-    updateMetadataRequestBrokerSet.intersect(controllerContext.liveOrShuttingDownBrokerIds).foreach { broker =>
-      val updateMetadataRequest = new UpdateMetadataRequest.Builder(updateMetadataRequestVersion, controllerId, controllerEpoch,
-        maxBrokerEpoch, partitionStates.asJava, liveBrokers.asJava)
-      sendRequest(broker, updateMetadataRequest)
+    val useCacheableBrokerEpoch = config.interBrokerProtocolVersion >= KAFKA_2_5_IV0
+
+    if (useCacheableBrokerEpoch) {
+      val maxBrokerEpoch = controllerContext.maxBrokerEpoch
+      updateMetadataRequestBrokerSet.intersect(controllerContext.liveOrShuttingDownBrokerIds).foreach { broker =>
+        val updateMetadataRequest = new UpdateMetadataRequest.Builder(updateMetadataRequestVersion, controllerId, controllerEpoch,
+          maxBrokerEpoch, partitionStates.asJava, liveBrokers.asJava)
+        sendRequest(broker, updateMetadataRequest)
+      }
+    } else {
+      updateMetadataRequestBrokerSet.intersect(controllerContext.liveOrShuttingDownBrokerIds).foreach { broker =>
+        val brokerEpoch = controllerContext.liveBrokerIdAndEpochs(broker)
+        val updateMetadataRequest = new UpdateMetadataRequest.Builder(updateMetadataRequestVersion, controllerId, controllerEpoch,
+          brokerEpoch, partitionStates.asJava, liveBrokers.asJava)
+        sendRequest(broker, updateMetadataRequest)
+      }
     }
     updateMetadataRequestBrokerSet.clear()
     updateMetadataRequestPartitionInfoMap.clear()
