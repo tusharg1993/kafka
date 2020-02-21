@@ -47,7 +47,7 @@ public class StopReplicaResponse extends AbstractResponse {
 
     private static final Schema STOP_REPLICA_RESPONSE_V1 = STOP_REPLICA_RESPONSE_V0;
 
-    private static final Schema STOP_REPLICA_RESPONSE_V2 = STOP_REPLICA_RESPONSE_V2;
+    private static final Schema STOP_REPLICA_RESPONSE_V2 = STOP_REPLICA_RESPONSE_V1;
 
 
     public static Schema[] schemaVersions() {
