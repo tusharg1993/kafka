@@ -375,9 +375,9 @@ public class UpdateMetadataRequest extends AbstractControlRequest {
     private Struct struct = null;
     private Lock structLock = new ReentrantLock();
 
-    private UpdateMetadataRequest(short version, int controllerId, int controllerEpoch, long brokerEpoch,
+    private UpdateMetadataRequest(short version, int controllerId, int controllerEpoch, long brokerEpoch, long maxBrokerEpoch,
                                   Map<TopicPartition, PartitionState> partitionStates, Set<Broker> liveBrokers) {
-        super(ApiKeys.UPDATE_METADATA, version, controllerId, controllerEpoch, brokerEpoch);
+        super(ApiKeys.UPDATE_METADATA, version, controllerId, controllerEpoch, brokerEpoch, maxBrokerEpoch);
         this.partitionStates = partitionStates;
         this.liveBrokers = liveBrokers;
     }

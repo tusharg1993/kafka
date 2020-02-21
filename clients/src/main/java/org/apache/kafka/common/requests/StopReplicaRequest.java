@@ -113,9 +113,9 @@ public class StopReplicaRequest extends AbstractControlRequest {
     private final boolean deletePartitions;
     private final Collection<TopicPartition> partitions;
 
-    private StopReplicaRequest(int controllerId, int controllerEpoch, long brokerEpoch, boolean deletePartitions,
+    private StopReplicaRequest(int controllerId, int controllerEpoch, long brokerEpoch, long maxBrokerEpoch, boolean deletePartitions,
                                Collection<TopicPartition> partitions, short version) {
-        super(ApiKeys.STOP_REPLICA, version, controllerId, controllerEpoch, brokerEpoch);
+        super(ApiKeys.STOP_REPLICA, version, controllerId, controllerEpoch, brokerEpoch, maxBrokerEpoch);
         this.deletePartitions = deletePartitions;
         this.partitions = partitions;
     }
