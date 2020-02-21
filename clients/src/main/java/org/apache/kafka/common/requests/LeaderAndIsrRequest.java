@@ -118,28 +118,38 @@ public class LeaderAndIsrRequest extends AbstractControlRequest {
     private static final Schema LEADER_AND_ISR_REQUEST_V2 = new Schema(
             CONTROLLER_ID,
             CONTROLLER_EPOCH,
+            BROKER_EPOCH,
+            TOPIC_STATES_V2,
+            LIVE_LEADERS_V0);
+
+    // LEADER_AND_ISR_REQUEST_V3 replaced the BROKER_EPOCH field in V2 with a MAX_BROKER_EPOCH. The MAX_BROKER_EPOCH
+    // field is intended to make the UpdateMetadataRequest have the same payload for all brokers, and thus be cacheable on the controller.
+    private static final Schema LEADER_AND_ISR_REQUEST_V3 = new Schema(
+            CONTROLLER_ID,
+            CONTROLLER_EPOCH,
             MAX_BROKER_EPOCH,
             TOPIC_STATES_V2,
             LIVE_LEADERS_V0);
 
+
     public static Schema[] schemaVersions() {
-        return new Schema[]{LEADER_AND_ISR_REQUEST_V0, LEADER_AND_ISR_REQUEST_V1, LEADER_AND_ISR_REQUEST_V2};
+        return new Schema[]{LEADER_AND_ISR_REQUEST_V0, LEADER_AND_ISR_REQUEST_V1, LEADER_AND_ISR_REQUEST_V2, LEADER_AND_ISR_REQUEST_V3};
     }
 
     public static class Builder extends AbstractControlRequest.Builder<LeaderAndIsrRequest> {
         private final Map<TopicPartition, PartitionState> partitionStates;
         private final Set<Node> liveLeaders;
 
-        public Builder(short version, int controllerId, int controllerEpoch, long maxBrokerEpoch,
+        public Builder(short version, int controllerId, int controllerEpoch, long brokerEpoch, long maxBrokerEpoch,
                        Map<TopicPartition, PartitionState> partitionStates, Set<Node> liveLeaders) {
-            super(ApiKeys.LEADER_AND_ISR, version, controllerId, controllerEpoch, maxBrokerEpoch);
+            super(ApiKeys.LEADER_AND_ISR, version, controllerId, controllerEpoch, brokerEpoch, maxBrokerEpoch);
             this.partitionStates = partitionStates;
             this.liveLeaders = liveLeaders;
         }
 
         @Override
         public LeaderAndIsrRequest build(short version) {
-            return new LeaderAndIsrRequest(controllerId, controllerEpoch, maxBrokerEpoch, partitionStates, liveLeaders, version);
+            return new LeaderAndIsrRequest(controllerId, controllerEpoch, brokerEpoch, maxBrokerEpoch, partitionStates, liveLeaders, version);
         }
 
         @Override
@@ -148,11 +158,14 @@ public class LeaderAndIsrRequest extends AbstractControlRequest {
             bld.append("(type=LeaderAndIsRequest")
                 .append(", controllerId=").append(controllerId)
                 .append(", controllerEpoch=").append(controllerEpoch)
-                .append(", brokerEpoch=").append(maxBrokerEpoch)
+                .append(", brokerEpoch=").append(brokerEpoch)
+                .append(", maxBrokerEpoch=").append(maxBrokerEpoch)
                 .append(", partitionStates=").append(partitionStates)
                 .append(", liveLeaders=(").append(Utils.join(liveLeaders, ", ")).append(")")
                 .append(")");
             return bld.toString();
+
+
         }
     }
 
@@ -210,6 +223,7 @@ public class LeaderAndIsrRequest extends AbstractControlRequest {
         Struct struct = new Struct(ApiKeys.LEADER_AND_ISR.requestSchema(version));
         struct.set(CONTROLLER_ID, controllerId);
         struct.set(CONTROLLER_EPOCH, controllerEpoch);
+        struct.setIfExists(BROKER_EPOCH, brokerEpoch);
         struct.setIfExists(MAX_BROKER_EPOCH, maxBrokerEpoch);
 
         if (struct.hasField(TOPIC_STATES)) {
