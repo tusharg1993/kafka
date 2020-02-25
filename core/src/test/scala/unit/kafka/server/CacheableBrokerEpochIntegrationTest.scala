@@ -10,9 +10,6 @@ import org.apache.kafka.common.TopicPartition
 import org.junit.Test
 
 class CacheableBrokerEpochIntegrationTest extends ZooKeeperTestHarness {
-  val brokerId = 0
-  val controllerId = 1
-
   @Test
   def testNewControllerConfig(): Unit = {
     testControlRequests(true)
@@ -24,6 +21,7 @@ class CacheableBrokerEpochIntegrationTest extends ZooKeeperTestHarness {
   }
 
   def testControlRequests(controllerUseNewConfig: Boolean): Unit = {
+    val controllerId = 0
     val controllerConfig: Properties =
       if (controllerUseNewConfig) {
         TestUtils.createBrokerConfig(controllerId, zkConnect)
@@ -34,7 +32,8 @@ class CacheableBrokerEpochIntegrationTest extends ZooKeeperTestHarness {
       }
     val controller = TestUtils.createServer(KafkaConfig.fromProps(controllerConfig))
 
-    // Note that broker side logic does not depend on the config
+    // Note that broker side logic does not depend on the InterBrokerProtocolVersion config
+    val brokerId = 1
     val brokerConfig = TestUtils.createBrokerConfig(brokerId, zkConnect)
     val broker = TestUtils.createServer(KafkaConfig.fromProps(brokerConfig))
     val servers = Seq(controller, broker)
