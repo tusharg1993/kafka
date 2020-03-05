@@ -94,7 +94,9 @@ object ApiVersion {
     // Add adding_replicas and removing_replicas fields to LeaderAndIsrRequest
     KAFKA_2_4_IV0,
     // Flexible version support in inter-broker APIs
-    KAFKA_2_4_IV1
+    KAFKA_2_4_IV1,
+    // Add cacheable broker epoch to UpdateMetadataRequest
+    KAFKA_2_5_IV0
   )
 
   // Map keys are the union of the short and full versions
@@ -333,6 +335,13 @@ case object KAFKA_2_4_IV1 extends DefaultApiVersion {
   val recordVersion = RecordVersion.V2
   val id: Int = 25
 }
+case object KAFKA_2_5_IV0 extends DefaultApiVersion {
+  val shortVersion: String = "2.5"
+  val subVersion = "IV0"
+  val recordVersion = RecordVersion.V2
+  val id: Int = 26
+}
+
 
 object ApiVersionValidator extends Validator {
 
