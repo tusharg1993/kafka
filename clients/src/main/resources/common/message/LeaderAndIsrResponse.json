@@ -22,7 +22,11 @@
   // Version 2 is the same as version 1.
   //
   // Version 3 is the same as version 2.
-  "validVersions": "0-4",
+  //
+  // Version 4 is is the first flexible version
+  //
+  // Version 5 is the same as version 4
+  "validVersions": "0-5",
   "flexibleVersions": "4+",
   "fields": [
     { "name": "ErrorCode", "type": "int16", "versions": "0+",
