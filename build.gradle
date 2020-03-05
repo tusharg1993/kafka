@@ -303,6 +303,11 @@ subprojects {
       exceptionFormat = testExceptionFormat
     }
     logTestStdout.rehydrate(delegate, owner, this)()
+    failFast = true
+    exclude '**/SaslAuthenticatorFailureDelayTest*'
+    exclude '**/SaslAuthenticatorTest*'
+    exclude '**/SaslGssapiSslEndToEndAuthorizationTest*'
+    exclude '**/*EndToEndAuthorizationTest*'
   }
 
   task integrationTest(type: Test, dependsOn: compileJava) {

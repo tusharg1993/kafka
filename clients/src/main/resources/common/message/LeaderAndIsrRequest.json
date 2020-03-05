@@ -22,17 +22,23 @@
   // Version 2 adds broker epoch and reorganizes the partitions by topic.
   //
   // Version 3 adds AddingReplicas and RemovingReplicas
-  "validVersions": "0-4",
+  //
+  // Version 4 is the first flexible version.
+  // 
+  // Version 5 adds the max broker epoch to make the UpdateMetadataRequest cacheable
+  "validVersions": "0-5",
   "flexibleVersions": "4+",
   "fields": [
     { "name": "ControllerId", "type": "int32", "versions": "0+", "entityType": "brokerId",
       "about": "The current controller ID." },
     { "name": "ControllerEpoch", "type": "int32", "versions": "0+",
       "about": "The current controller epoch." },
-    { "name": "BrokerEpoch", "type": "int64", "versions": "2+", "ignorable": true, "default": "-1",
+    { "name": "BrokerEpoch", "type": "int64", "versions": "2", "ignorable": true, "default": "-1",
       "about": "The current broker epoch." },
     { "name": "UngroupedPartitionStates", "type": "[]LeaderAndIsrPartitionState", "versions": "0-1",
       "about": "The state of each partition, in a v0 or v1 message." },
+    { "name": "MaxBrokerEpoch", "type": "int64", "versions": "3+", "ignorable": true, "default": "-1",
+      "about": "The max broker epoch." },
     // In v0 or v1 requests, each partition is listed alongside its topic name.
     // In v2+ requests, partitions are organized by topic, so that each topic name
     // only needs to be listed once.
