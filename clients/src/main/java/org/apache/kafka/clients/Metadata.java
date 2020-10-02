@@ -252,6 +252,26 @@ public final class Metadata implements Closeable {
         if (isClosed())
             throw new IllegalStateException("Update requested after metadata close");
 
+        String previousClusterId = cluster.clusterResource().clusterId();
+        String newClusterId = newCluster.clusterResource().clusterId();
+
+        if (previousClusterId != null && !newClusterId.equals(previousClusterId)) {
+            // kafka cluster id is unique.
+            // On client side, the cluster id in Metadata is only null during bootstrap, and client is
+            // expected to talk to the same cluster during its life cycle. Therefore if cluster id changes
+            // during metadata update, meaning this metadata update response is from a different cluster,
+            // client should reject this response and not update cached cluster to the wrong cluster
+
+            // According to SRE, removing brokers and adding to another cluster is common operation, thus
+            // it might be more suitable to just throw an exception for update and fail this update operation
+            // instead of bringing down the client completely, so that the metadata can be updated later from
+            // other brokers in the same cluster.
+            // Related issue: LIKAFKA-32543 since KCA uses regex for topics and has wildcard ACLs, it's more likely
+            // for KCA to hit this issue.
+            throw new IllegalStateException(
+                "Trying to access a different cluster " + newClusterId + ", previous connected cluster " + previousClusterId);
+        }
+
         this.needUpdate = false;
         this.lastRefreshMs = now;
         this.lastSuccessfulRefreshMs = now;
@@ -273,8 +293,6 @@ public final class Metadata implements Closeable {
 
         for (Listener listener: listeners)
             listener.onMetadataUpdate(newCluster, unavailableTopics);
-
-        String previousClusterId = cluster.clusterResource().clusterId();
 
         if (this.needMetadataForAllTopics) {
             // the listener may change the interested topics, which could cause another metadata refresh.
