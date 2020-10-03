@@ -266,9 +266,16 @@ public final class Metadata implements Closeable {
             // it might be more suitable to just throw an exception for update and fail this update operation
             // instead of bringing down the client completely, so that the metadata can be updated later from
             // other brokers in the same cluster.
-            // Related issue: LIKAFKA-32543 since KCA uses regex for topics and has wildcard ACLs, it's more likely
-            // for KCA to hit this issue.
-            throw new IllegalStateException(
+
+            // remove the traitor broker from the cluster's node list
+            List<Node> originalNodes = new ArrayList<>(cluster.nodes());
+            for (Node node : newCluster.nodes()) {
+                originalNodes.remove(node);
+            }
+            this.cluster = new Cluster(previousClusterId, originalNodes, new ArrayList<PartitionInfo>(0),
+                Collections.<String>emptySet(), Collections.<String>emptySet(), Collections.<String>emptySet(), null);
+
+            throw new StaleMetadataException(
                 "Trying to access a different cluster " + newClusterId + ", previous connected cluster " + previousClusterId);
         }
 
@@ -305,7 +312,6 @@ public final class Metadata implements Closeable {
 
         // The bootstrap cluster is guaranteed not to have any useful information
         if (!newCluster.isBootstrapConfigured()) {
-            String newClusterId = newCluster.clusterResource().clusterId();
             if (newClusterId == null ? previousClusterId != null : !newClusterId.equals(previousClusterId))
                 log.info("Cluster ID: {}", newClusterId);
             clusterResourceListeners.onUpdate(newCluster.clusterResource());

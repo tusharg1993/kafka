@@ -16,6 +16,7 @@
  */
 package org.apache.kafka.clients;
 
+import java.util.Set;
 import org.apache.kafka.common.Cluster;
 import org.apache.kafka.common.Node;
 import org.apache.kafka.common.TopicPartition;
@@ -522,7 +523,24 @@ public class NetworkClient implements KafkaClient {
         long updatedNow = this.time.milliseconds();
         List<ClientResponse> responses = new ArrayList<>();
         handleCompletedSends(responses, updatedNow);
-        handleCompletedReceives(responses, updatedNow);
+
+        try {
+            handleCompletedReceives(responses, updatedNow);
+        } catch (StaleMetadataException e) {
+            // close the connections to the traitor brokers upon this StateMetadataException
+            List<String> currentNodes = new ArrayList<>();
+            for (Node node : this.metadataUpdater.fetchNodes()) {
+                currentNodes.add(node.idString());
+            }
+
+            Set<String> currentConnections = this.connectionStates.currentConnections();
+            for (String connection : currentConnections) {
+                if (!currentNodes.contains(connection)) {
+                    this.close(connection);
+                }
+            }
+        }
+
         handleDisconnections(responses, updatedNow);
         handleConnections();
         handleInitiateApiVersionRequests(updatedNow);
@@ -659,7 +677,7 @@ public class NetworkClient implements KafkaClient {
      * @param responses The list of responses to update
      * @param nodeId Id of the node to be disconnected
      * @param now The current time
-     * @param disconnectState The state of the disconnected channel           
+     * @param disconnectState The state of the disconnected channel
      */
     private void processDisconnection(List<ClientResponse> responses,
                                       String nodeId,
