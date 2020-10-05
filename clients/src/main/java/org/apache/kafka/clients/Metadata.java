@@ -252,44 +252,7 @@ public final class Metadata implements Closeable {
         if (isClosed())
             throw new IllegalStateException("Update requested after metadata close");
 
-        String previousClusterId = cluster.clusterResource().clusterId();
-        String newClusterId = newCluster.clusterResource().clusterId();
-
-        if (previousClusterId != null && !newClusterId.equals(previousClusterId)) {
-            // kafka cluster id is unique.
-            // On client side, the cluster id in Metadata is only null during bootstrap, and client is
-            // expected to talk to the same cluster during its life cycle. Therefore if cluster id changes
-            // during metadata update, meaning this metadata update response is from a different cluster,
-            // client should reject this response and not update cached cluster to the wrong cluster
-
-            // Since removing brokers and adding to another cluster can be common operation,
-            // it might be more suitable to just throw an exception for update and fail this update operation
-            // instead of bringing down the client completely, so that the metadata can be updated later from
-            // other brokers in the same cluster.
-
-            // remove the traitor broker from the cluster's node list
-            List<Node> originalNodes = new ArrayList<>(cluster.nodes());
-            for (Node node : newCluster.nodes()) {
-                originalNodes.remove(node);
-            }
-
-            // 1. If all brokers in current cluster has been removed, close connections to all the brokers since
-            //    they are not valid anymore
-            // 2. If there are still active brokers in current cluster, only close connections to those removed
-            //    brokers
-            if (originalNodes.size() == 0) {
-                log.error("No valid brokers in current cluster {} anymore, please reboot the producer/consumer!", previousClusterId);
-            } else {
-                log.warn("Received metadata from a different cluster {}, removed {} brokers from current cluster {}",
-                    newClusterId, cluster.nodes().size() - originalNodes.size(), previousClusterId);
-
-                this.cluster = new Cluster(previousClusterId, originalNodes, new ArrayList<PartitionInfo>(0),
-                    Collections.<String>emptySet(), Collections.<String>emptySet(), Collections.<String>emptySet(), null);
-            }
-
-            throw new StaleMetadataException(
-                "Trying to access a different cluster " + newClusterId + ", previous connected cluster " + previousClusterId);
-        }
+        validateCluster(newCluster);
 
         this.needUpdate = false;
         this.lastRefreshMs = now;
@@ -431,6 +394,47 @@ public final class Metadata implements Closeable {
         // Override the timestamp of last refresh to let immediate update.
         this.lastRefreshMs = 0;
         requestUpdate();
+    }
+
+    private void validateCluster(Cluster newCluster) {
+        String previousClusterId = this.cluster.clusterResource().clusterId();
+        String newClusterId = newCluster.clusterResource().clusterId();
+
+        if (previousClusterId != null && !newClusterId.equals(previousClusterId)) {
+            // kafka cluster id is unique.
+            // On client side, the cluster id in Metadata is only null during bootstrap, and client is
+            // expected to talk to the same cluster during its life cycle. Therefore if cluster id changes
+            // during metadata update, meaning this metadata update response is from a different cluster,
+            // client should reject this response and not update cached cluster to the wrong cluster
+
+            // Since removing brokers and adding to another cluster can be common operation,
+            // it might be more suitable to just throw an exception for update and fail this update operation
+            // instead of bringing down the client completely, so that the metadata can be updated later from
+            // other brokers in the same cluster.
+
+            // remove the traitor broker from the cluster's node list
+            List<Node> originalNodes = new ArrayList<>(this.cluster.nodes());
+            for (Node node : newCluster.nodes()) {
+                originalNodes.remove(node);
+            }
+
+            // 1. If all brokers in current cluster has been removed, close connections to all the brokers since
+            //    they are not valid anymore
+            // 2. If there are still active brokers in current cluster, only close connections to those removed
+            //    brokers
+            if (originalNodes.size() == 0) {
+                log.error("No valid brokers in current cluster {} anymore, please reboot the producer/consumer!", previousClusterId);
+            } else {
+                log.warn("Received metadata from a different cluster {}, removed {} brokers from current cluster {}",
+                    newClusterId, this.cluster.nodes().size() - originalNodes.size(), previousClusterId);
+
+                this.cluster = new Cluster(previousClusterId, originalNodes, new ArrayList<PartitionInfo>(0),
+                    Collections.<String>emptySet(), Collections.<String>emptySet(), Collections.<String>emptySet(), null);
+            }
+
+            throw new StaleMetadataException(
+                "Trying to access a different cluster " + newClusterId + ", previous connected cluster " + previousClusterId);
+        }
     }
 
     private Cluster getClusterForCurrentTopics(Cluster cluster) {
