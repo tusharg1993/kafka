@@ -527,7 +527,7 @@ public class NetworkClient implements KafkaClient {
         try {
             handleCompletedReceives(responses, updatedNow);
         } catch (StaleMetadataException e) {
-            // close the connections to the traitor brokers upon this StateMetadataException
+            // close the connections to the traitor brokers upon this StaleMetadataException
             List<String> currentNodes = new ArrayList<>();
             for (Node node : this.metadataUpdater.fetchNodes()) {
                 currentNodes.add(node.idString());
