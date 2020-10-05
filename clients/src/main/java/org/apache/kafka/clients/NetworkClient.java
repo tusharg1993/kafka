@@ -534,11 +534,17 @@ public class NetworkClient implements KafkaClient {
             }
 
             Set<String> currentConnections = this.connectionStates.currentConnections();
+            int closedConnections = 0;
+            int previousConnections = currentConnections.size();
             for (String connection : currentConnections) {
                 if (!currentNodes.contains(connection)) {
                     this.close(connection);
+                    closedConnections++;
+                    log.warn("Received stale metadata from broker {}, closing connection to it", connection);
                 }
             }
+            log.warn("Closed {} connections due to stale metadata response, remaining {} valid broker connections",
+                closedConnections, previousConnections - closedConnections);
         }
 
         handleDisconnections(responses, updatedNow);

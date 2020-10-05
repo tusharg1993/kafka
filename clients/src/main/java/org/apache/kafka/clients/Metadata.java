@@ -262,7 +262,7 @@ public final class Metadata implements Closeable {
             // during metadata update, meaning this metadata update response is from a different cluster,
             // client should reject this response and not update cached cluster to the wrong cluster
 
-            // According to SRE, removing brokers and adding to another cluster is common operation, thus
+            // Since removing brokers and adding to another cluster can be common operation,
             // it might be more suitable to just throw an exception for update and fail this update operation
             // instead of bringing down the client completely, so that the metadata can be updated later from
             // other brokers in the same cluster.
@@ -272,8 +272,20 @@ public final class Metadata implements Closeable {
             for (Node node : newCluster.nodes()) {
                 originalNodes.remove(node);
             }
-            this.cluster = new Cluster(previousClusterId, originalNodes, new ArrayList<PartitionInfo>(0),
-                Collections.<String>emptySet(), Collections.<String>emptySet(), Collections.<String>emptySet(), null);
+
+            // 1. If all brokers in current cluster has been removed, close connections to all the brokers since
+            //    they are not valid anymore
+            // 2. If there are still active brokers in current cluster, only close connections to those removed
+            //    brokers
+            if (originalNodes.size() == 0) {
+                log.error("No valid brokers in current cluster {} anymore, please reboot the producer/consumer!", previousClusterId);
+            } else {
+                log.warn("Received metadata from a different cluster {}, removed {} brokers from current cluster {}",
+                    newClusterId, cluster.nodes().size() - originalNodes.size(), previousClusterId);
+
+                this.cluster = new Cluster(previousClusterId, originalNodes, new ArrayList<PartitionInfo>(0),
+                    Collections.<String>emptySet(), Collections.<String>emptySet(), Collections.<String>emptySet(), null);
+            }
 
             throw new StaleMetadataException(
                 "Trying to access a different cluster " + newClusterId + ", previous connected cluster " + previousClusterId);

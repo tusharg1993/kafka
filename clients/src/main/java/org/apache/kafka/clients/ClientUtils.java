@@ -16,8 +16,6 @@
  */
 package org.apache.kafka.clients;
 
-import java.net.InetAddress;
-import java.net.UnknownHostException;
 import org.apache.kafka.common.config.AbstractConfig;
 import org.apache.kafka.common.config.ConfigException;
 import org.apache.kafka.common.config.SaslConfigs;
@@ -52,20 +50,15 @@ public final class ClientUtils {
                     if (host == null || port == null)
                         throw new ConfigException("Invalid url in " + CommonClientConfigs.BOOTSTRAP_SERVERS_CONFIG + ": " + url);
 
-                        InetAddress[] inetAddresses = InetAddress.getAllByName(host);
-                        for (InetAddress inetAddress : inetAddresses) {
-                            String resolvedCanonicalName = inetAddress.getCanonicalHostName();
-                            InetSocketAddress address = new InetSocketAddress(resolvedCanonicalName, port);
-                            if (address.isUnresolved()) {
-                                log.warn("Couldn't resolve server {} from {} as DNS resolution of the canonical hostname {} failed for {}", url, CommonClientConfigs.BOOTSTRAP_SERVERS_CONFIG, resolvedCanonicalName, host);
-                            } else {
-                                addresses.add(address);
-                            }
-                        }
+                    InetSocketAddress address = new InetSocketAddress(host, port);
+
+                    if (address.isUnresolved()) {
+                        log.warn("Removing server {} from {} as DNS resolution failed for {}", url, CommonClientConfigs.BOOTSTRAP_SERVERS_CONFIG, host);
+                    } else {
+                        addresses.add(address);
+                    }
                 } catch (IllegalArgumentException e) {
                     throw new ConfigException("Invalid port in " + CommonClientConfigs.BOOTSTRAP_SERVERS_CONFIG + ": " + url);
-                } catch (UnknownHostException e) {
-                    throw new ConfigException("Unknown host in " + CommonClientConfigs.BOOTSTRAP_SERVERS_CONFIG + ": " + url);
                 }
             }
         }
