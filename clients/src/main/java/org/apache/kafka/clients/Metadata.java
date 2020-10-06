@@ -285,6 +285,8 @@ public final class Metadata implements Closeable {
             this.cluster = newCluster;
         }
 
+        String previousClusterId = this.cluster.clusterResource().clusterId();
+        String newClusterId = newCluster.clusterResource().clusterId();
         // The bootstrap cluster is guaranteed not to have any useful information
         if (!newCluster.isBootstrapConfigured()) {
             if (newClusterId == null ? previousClusterId != null : !newClusterId.equals(previousClusterId))
@@ -400,7 +402,7 @@ public final class Metadata implements Closeable {
         String previousClusterId = this.cluster.clusterResource().clusterId();
         String newClusterId = newCluster.clusterResource().clusterId();
 
-        if (previousClusterId != null && !newClusterId.equals(previousClusterId)) {
+        if (previousClusterId != null && newClusterId != null && !previousClusterId.equals(newClusterId)) {
             // kafka cluster id is unique.
             // On client side, the cluster id in Metadata is only null during bootstrap, and client is
             // expected to talk to the same cluster during its life cycle. Therefore if cluster id changes
@@ -427,10 +429,10 @@ public final class Metadata implements Closeable {
             } else {
                 log.warn("Received metadata from a different cluster {}, removed {} brokers from current cluster {}",
                     newClusterId, this.cluster.nodes().size() - originalNodes.size(), previousClusterId);
-
-                this.cluster = new Cluster(previousClusterId, originalNodes, new ArrayList<PartitionInfo>(0),
-                    Collections.<String>emptySet(), Collections.<String>emptySet(), Collections.<String>emptySet(), null);
             }
+
+            this.cluster = new Cluster(previousClusterId, originalNodes, new ArrayList<PartitionInfo>(0),
+                Collections.<String>emptySet(), Collections.<String>emptySet(), Collections.<String>emptySet(), null);
 
             throw new StaleMetadataException(
                 "Trying to access a different cluster " + newClusterId + ", previous connected cluster " + previousClusterId);
