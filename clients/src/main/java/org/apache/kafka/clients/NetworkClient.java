@@ -16,7 +16,6 @@
  */
 package org.apache.kafka.clients;
 
-import java.util.Set;
 import org.apache.kafka.common.Cluster;
 import org.apache.kafka.common.Node;
 import org.apache.kafka.common.TopicPartition;
