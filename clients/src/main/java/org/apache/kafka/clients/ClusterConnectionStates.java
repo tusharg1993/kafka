@@ -16,7 +16,6 @@
  */
 package org.apache.kafka.clients;
 
-import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
 
 import org.apache.kafka.common.errors.AuthenticationException;
@@ -260,10 +259,6 @@ final class ClusterConnectionStates {
     public AuthenticationException authenticationException(String id) {
         NodeConnectionState state = nodeState.get(id);
         return state != null ? state.authenticationException : null;
-    }
-
-    public Set<String> currentConnections() {
-        return nodeState.keySet();
     }
 
     /**

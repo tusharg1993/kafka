@@ -285,10 +285,10 @@ public final class Metadata implements Closeable {
             this.cluster = newCluster;
         }
 
-        String previousClusterId = this.cluster.clusterResource().clusterId();
-        String newClusterId = newCluster.clusterResource().clusterId();
         // The bootstrap cluster is guaranteed not to have any useful information
         if (!newCluster.isBootstrapConfigured()) {
+            String previousClusterId = this.cluster.clusterResource().clusterId();
+            String newClusterId = newCluster.clusterResource().clusterId();
             if (newClusterId == null ? previousClusterId != null : !newClusterId.equals(previousClusterId))
                 log.info("Cluster ID: {}", newClusterId);
             clusterResourceListeners.onUpdate(newCluster.clusterResource());
