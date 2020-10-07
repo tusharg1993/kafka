@@ -527,24 +527,10 @@ public class NetworkClient implements KafkaClient {
         try {
             handleCompletedReceives(responses, updatedNow);
         } catch (StaleMetadataException e) {
-            // close the connections to the traitor brokers upon this StaleMetadataException
-            List<String> currentNodes = new ArrayList<>();
-            for (Node node : this.metadataUpdater.fetchNodes()) {
-                currentNodes.add(node.idString());
-            }
-
-            Set<String> currentConnections = this.connectionStates.currentConnections();
-            int closedConnections = 0;
-            int previousConnections = currentConnections.size();
-            for (String connection : currentConnections) {
-                if (!currentNodes.contains(connection)) {
-                    this.close(connection);
-                    closedConnections++;
-                    log.warn("Received stale metadata from broker {}, closing connection to it", connection);
-                }
-            }
-            log.warn("Closed {} connections due to stale metadata response, remaining {} valid broker connections",
-                closedConnections, previousConnections - closedConnections);
+            // upon stale metadata exception from a different cluster, close the network client
+            // the producer/consumer will hit closedSelector exception and close
+            log.error("Received stale metadata from a different cluster, close the network client now");
+            this.close();
         }
 
         handleDisconnections(responses, updatedNow);

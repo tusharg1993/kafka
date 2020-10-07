@@ -414,28 +414,17 @@ public final class Metadata implements Closeable {
             // instead of bringing down the client completely, so that the metadata can be updated later from
             // other brokers in the same cluster.
 
-            // remove the traitor broker from the cluster's node list
-            List<Node> originalNodes = new ArrayList<>(this.cluster.nodes());
-            for (Node node : newCluster.nodes()) {
-                originalNodes.remove(node);
-            }
+            // this code path will only get executed when all brokers in original cluster has been removed and
+            // one/some brokers have been added to another. If only some of the original brokers were removed/added
+            // to another cluster, the client should get updated metadata with valid brokers from other hosts.
+            // so we can just throw an exception and close the network client
 
-            // 1. If all brokers in current cluster has been removed, close connections to all the brokers since
-            //    they are not valid anymore
-            // 2. If there are still active brokers in current cluster, only close connections to those removed
-            //    brokers
-            if (originalNodes.size() == 0) {
-                log.error("No valid brokers in current cluster {} anymore, please reboot the producer/consumer!", previousClusterId);
-            } else {
-                log.warn("Received metadata from a different cluster {}, removed {} brokers from current cluster {}",
-                    newClusterId, this.cluster.nodes().size() - originalNodes.size(), previousClusterId);
-            }
-
-            this.cluster = new Cluster(previousClusterId, originalNodes, new ArrayList<PartitionInfo>(0),
-                Collections.<String>emptySet(), Collections.<String>emptySet(), Collections.<String>emptySet(), null);
+            log.error("Received metadata from a different cluster {}, current cluster {} has no valid brokers anymore,"
+                + "please reboot the producer/consumer", newClusterId, previousClusterId);
 
             throw new StaleMetadataException(
                 "Trying to access a different cluster " + newClusterId + ", previous connected cluster " + previousClusterId);
+
         }
     }
 
