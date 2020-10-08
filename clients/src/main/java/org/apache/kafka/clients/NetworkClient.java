@@ -525,7 +525,7 @@ public class NetworkClient implements KafkaClient {
 
         try {
             handleCompletedReceives(responses, updatedNow);
-        } catch (StaleMetadataException e) {
+        } catch (StaleClusterMetadataException e) {
             // upon stale metadata exception from a different cluster, close the network client
             // the producer/consumer will hit closedSelector exception and close
             log.error("Received stale metadata from a different cluster, close the network client now");

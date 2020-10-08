@@ -422,7 +422,7 @@ public final class Metadata implements Closeable {
             log.error("Received metadata from a different cluster {}, current cluster {} has no valid brokers anymore,"
                 + "please reboot the producer/consumer", newClusterId, previousClusterId);
 
-            throw new StaleMetadataException(
+            throw new StaleClusterMetadataException(
                 "Trying to access a different cluster " + newClusterId + ", previous connected cluster " + previousClusterId);
 
         }
