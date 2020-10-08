@@ -522,7 +522,16 @@ public class NetworkClient implements KafkaClient {
         long updatedNow = this.time.milliseconds();
         List<ClientResponse> responses = new ArrayList<>();
         handleCompletedSends(responses, updatedNow);
-        handleCompletedReceives(responses, updatedNow);
+
+        try {
+            handleCompletedReceives(responses, updatedNow);
+        } catch (StaleClusterMetadataException e) {
+            // upon stale metadata exception from a different cluster, close the network client
+            // the producer/consumer will hit closedSelector exception and close
+            log.error("Received stale metadata from a different cluster, close the network client now");
+            this.close();
+        }
+
         handleDisconnections(responses, updatedNow);
         handleConnections();
         handleInitiateApiVersionRequests(updatedNow);
@@ -659,7 +668,7 @@ public class NetworkClient implements KafkaClient {
      * @param responses The list of responses to update
      * @param nodeId Id of the node to be disconnected
      * @param now The current time
-     * @param disconnectState The state of the disconnected channel           
+     * @param disconnectState The state of the disconnected channel
      */
     private void processDisconnection(List<ClientResponse> responses,
                                       String nodeId,
