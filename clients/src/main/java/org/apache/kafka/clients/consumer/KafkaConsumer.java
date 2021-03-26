@@ -761,7 +761,8 @@ public class KafkaConsumer<K, V> implements Consumer<K, V> {
                     true,
                     apiVersions,
                     throttleTimeSensor,
-                    logContext);
+                    logContext,
+                    config.getString(ConsumerConfig.CUSTOMIZED_CLIENT_NAME_CONFIG));
             netClient.setEnableStickyMetadataFetch(config.getBoolean(CommonClientConfigs.ENABLE_STICKY_METADATA_FETCH_CONFIG));
             this.client = new ConsumerNetworkClient(
                     logContext,

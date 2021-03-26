@@ -160,6 +160,9 @@ public class ConsumerConfig extends AbstractConfig {
      */
     public static final String CLIENT_ID_CONFIG = CommonClientConfigs.CLIENT_ID_CONFIG;
 
+    /** <code>customized.client.name</code> */
+    public static final String CUSTOMIZED_CLIENT_NAME_CONFIG = CommonClientConfigs.CUSTOMIZED_CLIENT_NAME_CONFIG;
+
     /**
      * <code>client.rack</code>
      */
@@ -345,6 +348,11 @@ public class ConsumerConfig extends AbstractConfig {
                                         "",
                                         Importance.LOW,
                                         CommonClientConfigs.CLIENT_ID_DOC)
+                                .define(CUSTOMIZED_CLIENT_NAME_CONFIG,
+                                        Type.STRING,
+                                        "linkedin-kafka-oss-consumer-java",
+                                        Importance.LOW,
+                                        CommonClientConfigs.CUSTOMIZED_CLIENT_NAME_DOC)
                                 .define(CLIENT_RACK_CONFIG,
                                         Type.STRING,
                                         "",

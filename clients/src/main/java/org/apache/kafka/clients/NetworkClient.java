@@ -102,6 +102,9 @@ public class NetworkClient implements KafkaClient {
     /* the client id used to identify this client in requests to the server */
     private final String clientId;
 
+    /* the customized client name to identify client type */
+    private final String customizedClientName;
+
     /* the current correlation id to use when sending requests to servers */
     private int correlation;
 
@@ -161,24 +164,60 @@ public class NetworkClient implements KafkaClient {
              discoverBrokerVersions,
              apiVersions,
              null,
-             logContext);
+             logContext,
+             null);
     }
 
     public NetworkClient(Selectable selector,
-            Metadata metadata,
-            String clientId,
-            int maxInFlightRequestsPerConnection,
-            long reconnectBackoffMs,
-            long reconnectBackoffMax,
-            int socketSendBuffer,
-            int socketReceiveBuffer,
-            int defaultRequestTimeoutMs,
-            ClientDnsLookup clientDnsLookup,
-            Time time,
-            boolean discoverBrokerVersions,
-            ApiVersions apiVersions,
-            Sensor throttleTimeSensor,
-            LogContext logContext) {
+        Metadata metadata,
+        String clientId,
+        int maxInFlightRequestsPerConnection,
+        long reconnectBackoffMs,
+        long reconnectBackoffMax,
+        int socketSendBuffer,
+        int socketReceiveBuffer,
+        int defaultRequestTimeoutMs,
+        ClientDnsLookup clientDnsLookup,
+        Time time,
+        boolean discoverBrokerVersions,
+        ApiVersions apiVersions,
+        Sensor throttleTimeSensor,
+        LogContext logContext) {
+        this(null,
+            metadata,
+            selector,
+            clientId,
+            maxInFlightRequestsPerConnection,
+            reconnectBackoffMs,
+            reconnectBackoffMax,
+            socketSendBuffer,
+            socketReceiveBuffer,
+            defaultRequestTimeoutMs,
+            clientDnsLookup,
+            time,
+            discoverBrokerVersions,
+            apiVersions,
+            throttleTimeSensor,
+            logContext,
+            null);
+    }
+
+    public NetworkClient(Selectable selector,
+                         Metadata metadata,
+                         String clientId,
+                         int maxInFlightRequestsPerConnection,
+                         long reconnectBackoffMs,
+                         long reconnectBackoffMax,
+                         int socketSendBuffer,
+                         int socketReceiveBuffer,
+                         int defaultRequestTimeoutMs,
+                         ClientDnsLookup clientDnsLookup,
+                         Time time,
+                         boolean discoverBrokerVersions,
+                         ApiVersions apiVersions,
+                         Sensor throttleTimeSensor,
+                         LogContext logContext,
+                         String clientName) {
         this(null,
              metadata,
              selector,
@@ -194,39 +233,41 @@ public class NetworkClient implements KafkaClient {
              discoverBrokerVersions,
              apiVersions,
              throttleTimeSensor,
-             logContext);
+             logContext,
+             clientName);
     }
 
     public NetworkClient(Selectable selector,
-                         MetadataUpdater metadataUpdater,
-                         String clientId,
-                         int maxInFlightRequestsPerConnection,
-                         long reconnectBackoffMs,
-                         long reconnectBackoffMax,
-                         int socketSendBuffer,
-                         int socketReceiveBuffer,
-                         int defaultRequestTimeoutMs,
-                         ClientDnsLookup clientDnsLookup,
-                         Time time,
-                         boolean discoverBrokerVersions,
-                         ApiVersions apiVersions,
-                         LogContext logContext) {
+        MetadataUpdater metadataUpdater,
+        String clientId,
+        int maxInFlightRequestsPerConnection,
+        long reconnectBackoffMs,
+        long reconnectBackoffMax,
+        int socketSendBuffer,
+        int socketReceiveBuffer,
+        int defaultRequestTimeoutMs,
+        ClientDnsLookup clientDnsLookup,
+        Time time,
+        boolean discoverBrokerVersions,
+        ApiVersions apiVersions,
+        LogContext logContext) {
         this(metadataUpdater,
-             null,
-             selector,
-             clientId,
-             maxInFlightRequestsPerConnection,
-             reconnectBackoffMs,
-             reconnectBackoffMax,
-             socketSendBuffer,
-             socketReceiveBuffer,
-             defaultRequestTimeoutMs,
-             clientDnsLookup,
-             time,
-             discoverBrokerVersions,
-             apiVersions,
-             null,
-             logContext);
+            null,
+            selector,
+            clientId,
+            maxInFlightRequestsPerConnection,
+            reconnectBackoffMs,
+            reconnectBackoffMax,
+            socketSendBuffer,
+            socketReceiveBuffer,
+            defaultRequestTimeoutMs,
+            clientDnsLookup,
+            time,
+            discoverBrokerVersions,
+            apiVersions,
+            null,
+            logContext,
+            null);
     }
 
     private NetworkClient(MetadataUpdater metadataUpdater,
@@ -244,7 +285,8 @@ public class NetworkClient implements KafkaClient {
                           boolean discoverBrokerVersions,
                           ApiVersions apiVersions,
                           Sensor throttleTimeSensor,
-                          LogContext logContext) {
+                          LogContext logContext,
+                          String clientName) {
         /* It would be better if we could pass `DefaultMetadataUpdater` from the public constructor, but it's not
          * possible because `DefaultMetadataUpdater` is an inner class and it can only be instantiated after the
          * super constructor is invoked.
@@ -273,6 +315,7 @@ public class NetworkClient implements KafkaClient {
         this.log = logContext.logger(NetworkClient.class);
         this.clientDnsLookup = clientDnsLookup;
         this.state = new AtomicReference<>(State.ACTIVE);
+        this.customizedClientName = clientName;
     }
 
     public void setEnableStickyMetadataFetch(boolean enableStickyMetadataFetch) {
@@ -892,7 +935,7 @@ public class NetworkClient implements KafkaClient {
                         maxApiVersion = apiVersion.maxVersion();
                     }
                 }
-                nodesNeedingApiVersionsFetch.put(node, new ApiVersionsRequest.Builder(maxApiVersion));
+                nodesNeedingApiVersionsFetch.put(node, new ApiVersionsRequest.Builder(maxApiVersion, this.customizedClientName));
             }
             return;
         }
@@ -927,7 +970,7 @@ public class NetworkClient implements KafkaClient {
             // connection.
             if (discoverBrokerVersions) {
                 this.connectionStates.checkingApiVersions(node);
-                nodesNeedingApiVersionsFetch.put(node, new ApiVersionsRequest.Builder());
+                nodesNeedingApiVersionsFetch.put(node, new ApiVersionsRequest.Builder(this.customizedClientName));
                 log.debug("Completed connection to node {}. Fetching API versions.", node);
             } else {
                 this.connectionStates.ready(node);

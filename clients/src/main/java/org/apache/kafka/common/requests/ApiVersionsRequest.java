@@ -31,7 +31,8 @@ import java.nio.ByteBuffer;
 public class ApiVersionsRequest extends AbstractRequest {
 
     public static class Builder extends AbstractRequest.Builder<ApiVersionsRequest> {
-        private static final String DEFAULT_CLIENT_SOFTWARE_NAME = "apache-kafka-java";
+        private static final String DEFAULT_CLIENT_SOFTWARE_NAME = "linkedin-kafka-oss-java";
+        private static String customizedClientName = null;
 
         private static final ApiVersionsRequestData DATA = new ApiVersionsRequestData()
             .setClientSoftwareName(DEFAULT_CLIENT_SOFTWARE_NAME)
@@ -41,13 +42,30 @@ public class ApiVersionsRequest extends AbstractRequest {
             super(ApiKeys.API_VERSIONS);
         }
 
+        public Builder(String clientName) {
+            super(ApiKeys.API_VERSIONS);
+            customizedClientName = clientName;
+        }
+
         public Builder(short version) {
             super(ApiKeys.API_VERSIONS, version);
         }
 
+        public Builder(short version, String clientName) {
+            super(ApiKeys.API_VERSIONS, version);
+            customizedClientName = clientName;
+        }
+
         @Override
         public ApiVersionsRequest build(short version) {
-            return new ApiVersionsRequest(DATA, version);
+            if (customizedClientName == null) {
+                return new ApiVersionsRequest(DATA, version);
+            } else {
+                ApiVersionsRequestData customizedData = new ApiVersionsRequestData()
+                    .setClientSoftwareName(customizedClientName)
+                    .setClientSoftwareVersion(AppInfoParser.getVersion());
+                return new ApiVersionsRequest(customizedData, version);
+            }
         }
 
         @Override
