@@ -66,8 +66,9 @@ public enum CompressionType {
                 // Set output buffer (uncompressed) to 16 KB (none by default) and input buffer (compressed) to
                 // 8 KB (0.5 KB by default) to ensure reasonable performance in cases where the caller reads a small
                 // number of bytes (potentially a single byte)
-                return new BufferedInputStream(new GZIPInputStream(new ByteBufferInputStream(buffer), 8 * 1024),
-                        16 * 1024);
+                return new KafkaBufferedInputStream(
+                    new KafkaGZIPInputStream(new ByteBufferInputStream(buffer), 8 * 1024, decompressionBufferSupplier),
+                    16 * 1024, decompressionBufferSupplier);
             } catch (Exception e) {
                 throw new KafkaException(e);
             }
