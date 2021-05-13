@@ -307,4 +307,11 @@ For a detailed description of findbugs bug categories, see http://findbugs.sourc
         </Or>
         <Bug pattern="NM_SAME_SIMPLE_NAME_AS_INTERFACE"/>
     </Match>
+
+    <Match>
+        <!-- Suppress a warning about array field volatility as it exists in the original code -->
+        <Class name="org.apache.kafka.common.record.KafkaBufferedInputStream"/>
+        <Field name="buf"/>
+        <Bug pattern="VO_VOLATILE_REFERENCE_TO_ARRAY"/>
+    </Match>
 </FindBugsFilter>
