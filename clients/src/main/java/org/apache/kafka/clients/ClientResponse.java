@@ -135,18 +135,35 @@ public class ClientResponse {
         return latencyMs;
     }
 
+    public Logger getLogger() {
+        if (logContext == null) {
+            LogContext logContext = new LogContext("[" + requestHeader.toString() + "] ");
+            return logContext.logger(ClientResponse.class);
+        }
+        return logContext.logger(ClientResponse.class);
+    }
+
     public void releaseBuffer() {
         if (memoryPool != null && responsePayload != null) {
+            getLogger().trace(
+                "ByteBuffer[{}] returned to memorypool ({}). Ref Count: {}. RequestType: {}",
+                (responsePayload == null ? "null" : responsePayload.position()), (memoryPool == null ? "null" : "not null"),
+                refCount.get(), this.requestHeader.apiKey());
             memoryPool.release(responsePayload);
             responsePayload = null;
+        } else {
+            // Mostly this means double releaseBuffer calls or releaseBuffer where response is null such as disconnects
+            getLogger().error(
+                "ByteBuffer[{}] returned to memorypool ({}). Ref Count: {}. RequestType: {}",
+                (responsePayload == null ? "null" : responsePayload.position()), (memoryPool == null ? "null" : "not null"),
+                refCount.get(), this.requestHeader.apiKey());
         }
     }
 
     public void checkBufferRelease() {
         if (memoryPool != null && responsePayload != null) {
-            Logger logger = logContext.logger(ClientResponse.class);
-            logger.error("ByteBuffer of size {} not released. Ref Count is {}. Forcefully returning buffer",
-                responsePayload.position(), refCount.get());
+            getLogger().error("ByteBuffer[{}] not released. Ref Count: {}. RequestType: {}",
+                responsePayload.position(), refCount.get(), this.requestHeader.apiKey());
             memoryPool.release(responsePayload);
             responsePayload = null;
         }
