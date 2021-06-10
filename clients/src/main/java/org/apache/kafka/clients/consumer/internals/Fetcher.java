@@ -606,6 +606,11 @@ public class Fetcher<K, V> implements SubscriptionState.Listener, Closeable {
 
                         try {
                             nextInLineRecords = parseCompletedFetch(completedFetch);
+
+                            // nextInLineRecords might be null when completedFetch contains error
+                            if (nextInLineRecords == null) {
+                                completedFetch.response.decRefCount();
+                            }
                         } catch (Exception e) {
                             // Remove a completedFetch upon a parse with exception if (1) it contains no records, and
                             // (2) there are no fetched records with actual content preceding this exception.
@@ -620,7 +625,6 @@ public class Fetcher<K, V> implements SubscriptionState.Listener, Closeable {
                             throw e;
                         }
                         completedFetches.poll();
-                        completedFetch.response.decRefCount();
                     }
                 } else {
                     TopicPartition partition = nextInLineRecords.partition;
@@ -1261,6 +1265,7 @@ public class Fetcher<K, V> implements SubscriptionState.Listener, Closeable {
             if (!isFetched) {
                 maybeCloseRecordStream();
                 cachedRecordException = null;
+                this.completedFetch.response.decRefCount();
                 this.isFetched = true;
                 this.completedFetch.metricAggregator.record(partition, bytesRead, recordsRead);
 
@@ -1464,7 +1469,7 @@ public class Fetcher<K, V> implements SubscriptionState.Listener, Closeable {
                                FetchResponse.PartitionData<Records> partitionData,
                                FetchResponseMetricAggregator metricAggregator,
                                short responseVersion,
-                                ClientResponse response) {
+                               ClientResponse response) {
             this.partition = partition;
             this.fetchedOffset = fetchedOffset;
             this.partitionData = partitionData;
