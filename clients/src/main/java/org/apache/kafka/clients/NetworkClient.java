@@ -613,6 +613,7 @@ public class NetworkClient implements KafkaClient {
     public void close() {
         this.selector.close();
         this.metadataUpdater.close();
+        this.selector.completedReceives().forEach(NetworkReceive::close);
     }
 
     /**
