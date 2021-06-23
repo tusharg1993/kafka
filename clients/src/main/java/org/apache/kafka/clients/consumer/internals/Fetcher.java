@@ -1677,6 +1677,7 @@ public class Fetcher<K, V> implements SubscriptionState.Listener, Closeable {
         for (CompletedFetch completedFetch : completedFetches) {
             completedFetch.response.decRefCount();
         }
+        completedFetches.clear();
         decompressionBufferSupplier.close();
     }
 

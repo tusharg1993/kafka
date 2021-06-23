@@ -614,6 +614,7 @@ public class NetworkClient implements KafkaClient {
         this.selector.close();
         this.metadataUpdater.close();
         this.selector.completedReceives().forEach(NetworkReceive::close);
+        this.selector.completedReceives().clear();
     }
 
     /**
@@ -807,8 +808,9 @@ public class NetworkClient implements KafkaClient {
 
             // If request is an internal request such as Metadata or ApiVersion, then close the network receive
             // Otherwise, it's ClientResponse's responsibility to release the buffer to MemoryPool via ref counting
-            if (req.isInternalRequest)
+            if (req.isInternalRequest) {
                 receive.close();
+            }
         }
     }
 
@@ -1171,7 +1173,7 @@ public class NetworkClient implements KafkaClient {
                     memoryPool, responsePayload, logContext);
             }
             return new ClientResponse(header, callback, destination, createdTimeMs, timeMs, false, null, null, response,
-                memoryPool, responsePayload, logContext);
+                memoryPool, responsePayload);
         }
 
         public ClientResponse completed(AbstractResponse response, long timeMs) {

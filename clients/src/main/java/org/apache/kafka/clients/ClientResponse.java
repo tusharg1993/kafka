@@ -21,11 +21,11 @@ import java.util.concurrent.atomic.AtomicLong;
 import org.apache.kafka.common.errors.AuthenticationException;
 import org.apache.kafka.common.errors.UnsupportedVersionException;
 import org.apache.kafka.common.memory.MemoryPool;
-import org.apache.kafka.common.network.NetworkReceive;
+import org.apache.kafka.common.memory.RecyclingMemoryPool;
 import org.apache.kafka.common.requests.AbstractResponse;
 import org.apache.kafka.common.requests.RequestHeader;
-import org.apache.kafka.common.utils.LogContext;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 /**
@@ -34,7 +34,7 @@ import org.slf4j.Logger;
  */
 public class ClientResponse {
 
-    private final RequestHeader requestHeader;
+    protected final RequestHeader requestHeader;
     private final RequestCompletionHandler callback;
     private final String destination;
     private final long receivedTimeMs;
@@ -43,10 +43,10 @@ public class ClientResponse {
     private final UnsupportedVersionException versionMismatch;
     private final AuthenticationException authenticationException;
     private final AbstractResponse responseBody;
-    private final MemoryPool memoryPool;
-    private final LogContext logContext;
-    private ByteBuffer responsePayload;
-    private final AtomicLong refCount;
+    protected final MemoryPool memoryPool;
+    protected ByteBuffer responsePayload;
+    protected final AtomicLong refCount;
+    protected Logger logger;
 
     public ClientResponse(RequestHeader requestHeader,
         RequestCompletionHandler callback,
@@ -58,8 +58,7 @@ public class ClientResponse {
         AuthenticationException authenticationException,
         AbstractResponse responseBody,
         MemoryPool memoryPool,
-        ByteBuffer responsePayload,
-        LogContext logContext) {
+        ByteBuffer responsePayload) {
         this.requestHeader = requestHeader;
         this.callback = callback;
         this.destination = destination;
@@ -71,7 +70,7 @@ public class ClientResponse {
         this.responseBody = responseBody;
         this.memoryPool = memoryPool;
         this.responsePayload = responsePayload;
-        this.logContext = logContext;
+        this.logger = LoggerFactory.getLogger(RecyclingMemoryPool.class);
         this.refCount = new AtomicLong(0);
     }
 
@@ -96,7 +95,7 @@ public class ClientResponse {
                           AuthenticationException authenticationException,
                           AbstractResponse responseBody) {
         this(requestHeader, callback, destination, createdTimeMs, receivedTimeMs, disconnected, versionMismatch,
-            authenticationException, responseBody, null, null, null);
+            authenticationException, responseBody, null, null);
     }
 
     public long receivedTimeMs() {
@@ -135,37 +134,22 @@ public class ClientResponse {
         return latencyMs;
     }
 
-    public Logger getLogger() {
-        if (logContext == null) {
-            LogContext logContext = new LogContext("[" + requestHeader.toString() + "] ");
-            return logContext.logger(ClientResponse.class);
-        }
-        return logContext.logger(ClientResponse.class);
-    }
-
-    public void releaseBuffer() {
+    private void releaseBuffer() {
         if (memoryPool != null && responsePayload != null) {
-            getLogger().trace(
-                "ByteBuffer[{}] returned to memorypool ({}). Ref Count: {}. RequestType: {}",
-                (responsePayload == null ? "null" : responsePayload.position()), (memoryPool == null ? "null" : "not null"),
-                refCount.get(), this.requestHeader.apiKey());
             memoryPool.release(responsePayload);
             responsePayload = null;
+
+            if (logger.isTraceEnabled()) {
+                logger.trace("ByteBuffer[{}] returned to memorypool ({}). Ref Count: {}. RequestType: {}",
+                    (responsePayload == null ? "null" : responsePayload.position()),
+                    (memoryPool == null ? "null" : "not null"), refCount.get(), this.requestHeader.apiKey());
+            }
         } else {
             // Mostly this means double releaseBuffer calls or releaseBuffer where response is null such as disconnects
-            getLogger().error(
-                "ByteBuffer[{}] returned to memorypool ({}). Ref Count: {}. RequestType: {}",
-                (responsePayload == null ? "null" : responsePayload.position()), (memoryPool == null ? "null" : "not null"),
-                refCount.get(), this.requestHeader.apiKey());
-        }
-    }
-
-    public void checkBufferRelease() {
-        if (memoryPool != null && responsePayload != null) {
-            getLogger().error("ByteBuffer[{}] not released. Ref Count: {}. RequestType: {}",
-                responsePayload.position(), refCount.get(), this.requestHeader.apiKey());
-            memoryPool.release(responsePayload);
-            responsePayload = null;
+            logger.error(
+                "Unneeded call to releaseBuffer(). ByteBuffer[{}]. memorypool ({}). Ref Count: {}. RequestType: {}",
+                (responsePayload == null ? "null" : responsePayload.position()),
+                (memoryPool == null ? "null" : "not null"), refCount.get(), this.requestHeader.apiKey());
         }
     }
 

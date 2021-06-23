@@ -102,7 +102,7 @@ public class CommonClientConfigs {
     public static final String ENABLE_STICKY_METADATA_FETCH_DOC = "Fetch metadata from the least loaded broker if false. Otherwise fetch metadata "
                                                          + "from the same broker until it is disconnected.";
 
-    public static final String ENABLE_CLIENT_RESPONSE_LEAK_CHECK = "enable.client.resonse.leakcheck";
+    public static final String ENABLE_CLIENT_RESPONSE_LEAK_CHECK = "linkedin.enable.client.resonse.leakcheck";
     public static final String ENABLE_CLIENT_RESPONSE_LEAK_CHECK_DOC = "Use ClientResponse with finalize method to check the release of NetworkReceive buffer.";
 
     /**
