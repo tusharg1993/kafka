@@ -33,7 +33,7 @@ import org.slf4j.LoggerFactory;
  * metadata that was originally sent.
  */
 public class ClientResponse {
-
+    protected static final Logger logger = LoggerFactory.getLogger(RecyclingMemoryPool.class);
     protected final RequestHeader requestHeader;
     private final RequestCompletionHandler callback;
     private final String destination;
@@ -44,9 +44,9 @@ public class ClientResponse {
     private final AuthenticationException authenticationException;
     private final AbstractResponse responseBody;
     protected final MemoryPool memoryPool;
-    protected ByteBuffer responsePayload;
     protected final AtomicLong refCount;
-    protected Logger logger;
+    protected ByteBuffer responsePayload;
+    private boolean bufferReleased = false;
 
     public ClientResponse(RequestHeader requestHeader,
         RequestCompletionHandler callback,
@@ -70,7 +70,6 @@ public class ClientResponse {
         this.responseBody = responseBody;
         this.memoryPool = memoryPool;
         this.responsePayload = responsePayload;
-        this.logger = LoggerFactory.getLogger(RecyclingMemoryPool.class);
         this.refCount = new AtomicLong(0);
     }
 
@@ -138,27 +137,38 @@ public class ClientResponse {
         if (memoryPool != null && responsePayload != null) {
             memoryPool.release(responsePayload);
             responsePayload = null;
+            bufferReleased = true;
 
             if (logger.isTraceEnabled()) {
                 logger.trace("ByteBuffer[{}] returned to memorypool ({}). Ref Count: {}. RequestType: {}",
                     (responsePayload == null ? "null" : responsePayload.position()),
                     (memoryPool == null ? "null" : "not null"), refCount.get(), this.requestHeader.apiKey());
             }
-        } else {
-            // Mostly this means double releaseBuffer calls or releaseBuffer where response is null such as disconnects
-            logger.error(
-                "Unneeded call to releaseBuffer(). ByteBuffer[{}]. memorypool ({}). Ref Count: {}. RequestType: {}",
-                (responsePayload == null ? "null" : responsePayload.position()),
-                (memoryPool == null ? "null" : "not null"), refCount.get(), this.requestHeader.apiKey());
         }
     }
 
+    private boolean usingMemoryPool() {
+        return memoryPool != null && memoryPool == MemoryPool.NONE;
+    }
+
     public void incRefCount() {
+        if (bufferReleased && usingMemoryPool()) {
+            // If somebody tried to call incRefCount after buffer has been released. This shouldn't happen
+            throw new IllegalStateException(
+                "Ref count being incremented again after buffer release. This should never happen.");
+        }
         refCount.incrementAndGet();
     }
 
     public void decRefCount() {
-        if (refCount.decrementAndGet() == 0) {
+        long value = refCount.decrementAndGet();
+        if (value < 0 && usingMemoryPool()) {
+            // Oops! This seems to be a place where we shouldn't get to.
+            // However, to save users from exceptions, who don't use pooling, don't throw an exception.
+            throw new IllegalStateException("Ref count decremented below zero. This should never happen.");
+        }
+
+        if (value == 0) {
             releaseBuffer();
         }
     }

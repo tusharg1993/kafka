@@ -7,6 +7,7 @@ import org.apache.kafka.common.memory.MemoryPool;
 import org.apache.kafka.common.requests.AbstractResponse;
 import org.apache.kafka.common.requests.RequestHeader;
 import org.apache.kafka.common.utils.LogContext;
+import org.slf4j.Logger;
 
 
 /**
@@ -14,13 +15,22 @@ import org.apache.kafka.common.utils.LogContext;
  * response has been returned to the pool. To be used only as a debugging aide.
  */
 public class ClientResponseWithFinalize extends ClientResponse {
+  private final LogContext logContext;
+
   public ClientResponseWithFinalize(RequestHeader requestHeader, RequestCompletionHandler callback, String destination,
       long createdTimeMs, long receivedTimeMs, boolean disconnected, UnsupportedVersionException versionMismatch,
       AuthenticationException authenticationException, AbstractResponse responseBody, MemoryPool memoryPool,
       ByteBuffer responsePayload, LogContext logContext) {
     super(requestHeader, callback, destination, createdTimeMs, receivedTimeMs, disconnected, versionMismatch,
         authenticationException, responseBody, memoryPool, responsePayload);
-    this.logger = logContext.logger(ClientResponse.class);
+    this.logContext = logContext;
+  }
+
+  private Logger getLogger() {
+    if (logContext != null) {
+      return logContext.logger(ClientResponseWithFinalize.class);
+    }
+    return logger;
   }
 
   protected void checkAndForceBufferRelease() {
