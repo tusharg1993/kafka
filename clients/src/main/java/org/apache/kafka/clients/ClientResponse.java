@@ -21,7 +21,6 @@ import java.util.concurrent.atomic.AtomicLong;
 import org.apache.kafka.common.errors.AuthenticationException;
 import org.apache.kafka.common.errors.UnsupportedVersionException;
 import org.apache.kafka.common.memory.MemoryPool;
-import org.apache.kafka.common.memory.RecyclingMemoryPool;
 import org.apache.kafka.common.requests.AbstractResponse;
 import org.apache.kafka.common.requests.RequestHeader;
 import org.slf4j.Logger;
@@ -33,7 +32,7 @@ import org.slf4j.LoggerFactory;
  * metadata that was originally sent.
  */
 public class ClientResponse {
-    protected static final Logger logger = LoggerFactory.getLogger(RecyclingMemoryPool.class);
+    protected static final Logger log = LoggerFactory.getLogger(ClientResponse.class);
     protected final RequestHeader requestHeader;
     private final RequestCompletionHandler callback;
     private final String destination;
@@ -135,15 +134,14 @@ public class ClientResponse {
 
     private void releaseBuffer() {
         if (memoryPool != null && responsePayload != null) {
+            if (log.isTraceEnabled()) {
+                log.trace("ByteBuffer[{}] returned to memorypool. Ref Count: {}. RequestType: {}",
+                    responsePayload.position(), refCount.get(), this.requestHeader.apiKey());
+            }
+
             memoryPool.release(responsePayload);
             responsePayload = null;
             bufferReleased = true;
-
-            if (logger.isTraceEnabled()) {
-                logger.trace("ByteBuffer[{}] returned to memorypool ({}). Ref Count: {}. RequestType: {}",
-                    (responsePayload == null ? "null" : responsePayload.position()),
-                    (memoryPool == null ? "null" : "not null"), refCount.get(), this.requestHeader.apiKey());
-            }
         }
     }
 
