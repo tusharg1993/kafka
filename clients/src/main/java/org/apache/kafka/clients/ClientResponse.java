@@ -146,7 +146,7 @@ public class ClientResponse {
     }
 
     private boolean usingMemoryPool() {
-        return memoryPool != null && memoryPool == MemoryPool.NONE;
+        return memoryPool != null && memoryPool != MemoryPool.NONE;
     }
 
     public void incRefCount() {
