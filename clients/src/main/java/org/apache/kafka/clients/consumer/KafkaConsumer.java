@@ -39,12 +39,15 @@ import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.errors.InterruptException;
 import org.apache.kafka.common.errors.TimeoutException;
 import org.apache.kafka.common.internals.ClusterResourceListeners;
+import org.apache.kafka.common.memory.MemoryPool;
+import org.apache.kafka.common.memory.RecyclingMemoryPool;
 import org.apache.kafka.common.metrics.JmxReporter;
 import org.apache.kafka.common.metrics.MetricConfig;
 import org.apache.kafka.common.metrics.Metrics;
 import org.apache.kafka.common.metrics.MetricsReporter;
 import org.apache.kafka.common.metrics.Sensor;
 import org.apache.kafka.common.network.ChannelBuilder;
+import org.apache.kafka.common.network.NetworkReceive;
 import org.apache.kafka.common.network.Selector;
 import org.apache.kafka.common.requests.IsolationLevel;
 import org.apache.kafka.common.requests.MetadataRequest;
@@ -551,6 +554,7 @@ public class KafkaConsumer<K, V> implements Consumer<K, V> {
     private static final AtomicInteger CONSUMER_CLIENT_ID_SEQUENCE = new AtomicInteger(1);
     private static final String JMX_PREFIX = "kafka.consumer";
     static final long DEFAULT_CLOSE_TIMEOUT_MS = 30 * 1000;
+    private static final MemoryPool memoryPool = new RecyclingMemoryPool(262144, 1572864, 2000);
 
     // Visible for testing
     final Metrics metrics;
@@ -721,8 +725,11 @@ public class KafkaConsumer<K, V> implements Consumer<K, V> {
 
             int heartbeatIntervalMs = config.getInt(ConsumerConfig.HEARTBEAT_INTERVAL_MS_CONFIG);
 
+            Selector selector =
+                new Selector(NetworkReceive.UNLIMITED, config.getLong(ConsumerConfig.CONNECTIONS_MAX_IDLE_MS_CONFIG), this.metrics, this.time,
+                    metricGrpPrefix, Collections.emptyMap(), true, false, channelBuilder, memoryPool, logContext);
             NetworkClient netClient = new NetworkClient(
-                    new Selector(config.getLong(ConsumerConfig.CONNECTIONS_MAX_IDLE_MS_CONFIG), metrics, time, metricGrpPrefix, channelBuilder, logContext),
+                    selector,
                     this.metadata,
                     clientId,
                     100, // a fixed large enough value will suffice for max in-flight requests
