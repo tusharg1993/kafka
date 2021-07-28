@@ -2882,8 +2882,8 @@ public class FetcherTest {
     private FetchResponse<MemoryRecords> fullFetchResponse(Set<TopicPartition> tpSet, MemoryRecords records, Errors error, long hw,
                                             long lastStableOffset, int throttleTime) {
         Map<TopicPartition, FetchResponse.PartitionData<MemoryRecords>> partitions = tpSet.stream()
-            .collect(Collectors.toMap((topicPartition) -> topicPartition,
-                (topicPartition) -> new FetchResponse.PartitionData<>(error, hw, lastStableOffset, 0L, null, records)));
+            .collect(Collectors.toMap(topicPartition -> topicPartition,
+                topicPartition -> new FetchResponse.PartitionData<>(error, hw, lastStableOffset, 0L, null, records)));
         return new FetchResponse<>(Errors.NONE, new LinkedHashMap<>(partitions), throttleTime, INVALID_SESSION_ID);
     }
 
