@@ -120,7 +120,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import org.powermock.reflect.Whitebox;
 
 import static java.util.Arrays.asList;
 import static java.util.Collections.singleton;
@@ -204,11 +203,13 @@ public class FetcherTest {
     }
 
     @Test
-    public void testFetchIncrementClientResponseRefCount() {
+    public void testFetchIncrementClientResponseRefCount() throws ClassNotFoundException {
+        buildFetcher();
+
         Set<TopicPartition> topicPartitions = new HashSet<>();
         topicPartitions.add(tp0);
         topicPartitions.add(tp1);
-        subscriptions.assignFromUser(topicPartitions);
+        assignFromUser(topicPartitions);
         subscriptions.seek(tp0, 0);
         subscriptions.seek(tp1, 0);
 
@@ -220,25 +221,26 @@ public class FetcherTest {
         consumerClient.poll(time.timer(0));
         assertTrue(fetcher.hasCompletedFetches());
 
-        ConcurrentLinkedQueue<Object> fetches = Whitebox.getInternalState(fetcher, "completedFetches");
-        ClientResponse response = Whitebox.getInternalState(fetches.peek(), "response");
-        AtomicLong refCount = Whitebox.getInternalState(response, "refCount");
+        ConcurrentLinkedQueue<Object> fetches = TestUtils.fieldValue(fetcher, Fetcher.class, "completedFetches");
+        ClientResponse response = TestUtils.fieldValue(fetches.peek(), Class.forName("org.apache.kafka.clients.consumer.internals.Fetcher$CompletedFetch"), "response");
+        AtomicLong refCount = TestUtils.fieldValue(response, ClientResponse.class, "refCount");
         assertEquals(2, refCount.longValue());
 
-        Map<TopicPartition, List<ConsumerRecord<byte[], byte[]>>> partitionRecords = fetcher.fetchedRecords();
+        Map<TopicPartition, List<ConsumerRecord<byte[], byte[]>>> partitionRecords = fetchedRecords();
         assertTrue(partitionRecords.containsKey(tp0));
         assertTrue(partitionRecords.containsKey(tp1));
 
-        refCount = Whitebox.getInternalState(response, "refCount");
+        refCount = TestUtils.fieldValue(response, ClientResponse.class, "refCount");
         assertEquals(0, refCount.longValue());
     }
 
     @Test
-    public void testFetcherCloseCleanupRefCount() {
+    public void testFetcherCloseCleanupRefCount() throws ClassNotFoundException {
+        buildFetcher();
         Set<TopicPartition> topicPartitions = new HashSet<>();
         topicPartitions.add(tp0);
         topicPartitions.add(tp1);
-        subscriptions.assignFromUser(topicPartitions);
+        assignFromUser(topicPartitions);
         subscriptions.seek(tp0, 0);
         subscriptions.seek(tp1, 0);
 
@@ -250,21 +252,22 @@ public class FetcherTest {
         consumerClient.poll(time.timer(0));
         assertTrue(fetcher.hasCompletedFetches());
 
-        ConcurrentLinkedQueue<Object> fetches = Whitebox.getInternalState(fetcher, "completedFetches");
-        ClientResponse response = Whitebox.getInternalState(fetches.peek(), "response");
-        AtomicLong refCount = Whitebox.getInternalState(response, "refCount");
+        ConcurrentLinkedQueue<Object> fetches = TestUtils.fieldValue(fetcher, Fetcher.class, "completedFetches");
+        ClientResponse response = TestUtils.fieldValue(fetches.peek(), Class.forName("org.apache.kafka.clients.consumer.internals.Fetcher$CompletedFetch"), "response");
+        AtomicLong refCount = TestUtils.fieldValue(response, ClientResponse.class, "refCount");
         assertEquals(2, refCount.longValue());
 
         fetcher.close();
         assertTrue(fetches.isEmpty());
 
-        refCount = Whitebox.getInternalState(response, "refCount");
+        refCount = TestUtils.fieldValue(response, ClientResponse.class, "refCount");
         assertEquals(0, refCount.longValue());
     }
 
     @Test
-    public void testFetchErrorDecrementsRefCount() {
-        subscriptions.assignFromUser(singleton(tp0));
+    public void testFetchErrorDecrementsRefCount() throws ClassNotFoundException {
+        buildFetcher();
+        assignFromUser(singleton(tp0));
         subscriptions.seek(tp0, 0);
 
         assertEquals(1, fetcher.sendFetches());
@@ -274,15 +277,15 @@ public class FetcherTest {
         consumerClient.poll(time.timer(0));
         assertTrue(fetcher.hasCompletedFetches());
 
-        ConcurrentLinkedQueue<Object> fetches = Whitebox.getInternalState(fetcher, "completedFetches");
-        ClientResponse response = Whitebox.getInternalState(fetches.peek(), "response");
-        AtomicLong refCount = Whitebox.getInternalState(response, "refCount");
+        ConcurrentLinkedQueue<Object> fetches = TestUtils.fieldValue(fetcher, Fetcher.class, "completedFetches");
+        ClientResponse response = TestUtils.fieldValue(fetches.peek(), Class.forName("org.apache.kafka.clients.consumer.internals.Fetcher$CompletedFetch"), "response");
+        AtomicLong refCount = TestUtils.fieldValue(response, ClientResponse.class, "refCount");
         assertEquals(1, refCount.longValue());
 
-        Map<TopicPartition, List<ConsumerRecord<byte[], byte[]>>> partitionRecords = fetcher.fetchedRecords();
+        Map<TopicPartition, List<ConsumerRecord<byte[], byte[]>>> partitionRecords = fetchedRecords();
         assertFalse(partitionRecords.containsKey(tp0));
 
-        refCount = Whitebox.getInternalState(response, "refCount");
+        refCount = TestUtils.fieldValue(response, ClientResponse.class, "refCount");
         assertEquals(0, refCount.longValue());
     }
 

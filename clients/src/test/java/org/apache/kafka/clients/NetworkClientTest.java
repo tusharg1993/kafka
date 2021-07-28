@@ -188,7 +188,8 @@ public class NetworkClientTest {
         client.send(request, time.milliseconds());
         assertTrue(client.hasInFlightRequests());
 
-        ResponseHeader respHeader = new ResponseHeader(request.correlationId());
+        ResponseHeader respHeader = new ResponseHeader(request.correlationId(),
+            request.apiKey().responseHeaderVersion(PRODUCE.latestVersion()));
         Struct resp = new Struct(ApiKeys.PRODUCE.responseSchema(ApiKeys.PRODUCE.latestVersion()));
         resp.set("responses", new Object[0]);
         Struct responseHeaderStruct = respHeader.toStruct();
@@ -221,7 +222,8 @@ public class NetworkClientTest {
         client.send(request, time.milliseconds());
         assertTrue(client.hasInFlightRequests());
 
-        ResponseHeader respHeader = new ResponseHeader(request.correlationId());
+        ResponseHeader respHeader = new ResponseHeader(request.correlationId(),
+            request.apiKey().responseHeaderVersion(PRODUCE.latestVersion()));
         Struct resp = new Struct(ApiKeys.PRODUCE.responseSchema(ApiKeys.PRODUCE.latestVersion()));
         resp.set("responses", new Object[0]);
         Struct responseHeaderStruct = respHeader.toStruct();

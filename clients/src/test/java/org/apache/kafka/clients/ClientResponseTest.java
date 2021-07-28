@@ -21,12 +21,13 @@ import java.util.LinkedHashMap;
 import org.apache.kafka.common.memory.MemoryPool;
 import org.apache.kafka.common.protocol.ApiKeys;
 import org.apache.kafka.common.protocol.Errors;
+import org.apache.kafka.common.record.MemoryRecords;
 import org.apache.kafka.common.requests.FetchResponse;
 import org.apache.kafka.common.requests.RequestHeader;
-import org.easymock.EasyMock;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.Mockito;
 
 
 public class ClientResponseTest {
@@ -40,8 +41,8 @@ public class ClientResponseTest {
     public void setup() {
         RequestHeader requestHeader = new RequestHeader(ApiKeys.FETCH, (short) 1, "someclient", 1);
         NetworkClientTest.TestCallbackHandler callbackHandler = new NetworkClientTest.TestCallbackHandler();
-        FetchResponse fetchResponse = new FetchResponse(Errors.NONE, new LinkedHashMap<>(), 0, 1);
-        memoryPool = EasyMock.createMock(MemoryPool.class);
+        FetchResponse<MemoryRecords> fetchResponse = new FetchResponse<>(Errors.NONE, new LinkedHashMap<>(), 0, 1);
+        memoryPool = Mockito.mock(MemoryPool.class);
 
         clientResponseWithPool =
             new ClientResponse(requestHeader, callbackHandler, "node0", 100, 110, false, null, null, fetchResponse,
@@ -67,14 +68,12 @@ public class ClientResponseTest {
 
     @Test
     public void testClientResponseBufferRelease() {
-        memoryPool.release(EasyMock.anyObject());
-        EasyMock.expectLastCall().once();
-        EasyMock.replay(memoryPool);
+        Mockito.doNothing().when(memoryPool).release(Mockito.any());
 
         clientResponseWithPool.incRefCount();
         clientResponseWithPool.decRefCount();
 
-        EasyMock.verify(memoryPool);
+        Mockito.verify(memoryPool, Mockito.times(1)).release(Mockito.any());
     }
 
     @Test
