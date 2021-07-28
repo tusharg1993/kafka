@@ -597,7 +597,9 @@ public class ConsumerNetworkClient implements Closeable {
                 future.raise(response.versionMismatch());
             } else {
                 future.complete(response);
+            }
 
+            if (response != null) {
                 // dec ref count and release the buffer to memory pool if any
                 // the fetch request buffer pool won't be release since we hold on to buffer references and add ref counts
                 this.response.decRefCount();
