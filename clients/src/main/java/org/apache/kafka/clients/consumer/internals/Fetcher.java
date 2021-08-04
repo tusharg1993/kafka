@@ -606,6 +606,14 @@ public class Fetcher<K, V> implements Closeable {
         try {
             while (recordsRemaining > 0) {
                 if (nextInLineFetch == null || nextInLineFetch.isConsumed) {
+                    // The completed fetch object could be de-referenced and use the underlying buffer in
+                    // two different cases.
+                    // 1. The CompletedFetch could be a valid object containing fetched data from broker. In that case,
+                    //    the records are retrieved by fetchRecords() call below and then, underlying buffer is no
+                    //    longer needed and it's released via the Fetcher.CompletedFetch.drain() method.
+                    // 2. The CompletedFetch could be an object containing an error code from broker such as
+                    //    NOT_LEADER_FOR_PARTITION. In that case, we don't need to retrieve the records and ref count
+                    //    is decremented after initializeCompletedFetch() method.
                     CompletedFetch records = completedFetches.peek();
                     if (records == null) break;
 
