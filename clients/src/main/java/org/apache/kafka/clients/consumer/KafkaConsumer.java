@@ -39,12 +39,14 @@ import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.errors.InterruptException;
 import org.apache.kafka.common.errors.TimeoutException;
 import org.apache.kafka.common.internals.ClusterResourceListeners;
+import org.apache.kafka.common.memory.MemoryPool;
 import org.apache.kafka.common.metrics.JmxReporter;
 import org.apache.kafka.common.metrics.MetricConfig;
 import org.apache.kafka.common.metrics.Metrics;
 import org.apache.kafka.common.metrics.MetricsReporter;
 import org.apache.kafka.common.metrics.Sensor;
 import org.apache.kafka.common.network.ChannelBuilder;
+import org.apache.kafka.common.network.NetworkReceive;
 import org.apache.kafka.common.network.Selector;
 import org.apache.kafka.common.requests.IsolationLevel;
 import org.apache.kafka.common.requests.MetadataRequest;
@@ -721,8 +723,15 @@ public class KafkaConsumer<K, V> implements Consumer<K, V> {
 
             int heartbeatIntervalMs = config.getInt(ConsumerConfig.HEARTBEAT_INTERVAL_MS_CONFIG);
 
+            MemoryPool memoryPool = config.getConfiguredInstance(CommonClientConfigs.POOL_CLASS_NAME_CONFIG, MemoryPool.class);
+            if (memoryPool == null) {
+              memoryPool = MemoryPool.NONE;
+            }
+
+            Selector selector = new Selector(NetworkReceive.UNLIMITED, config.getLong(ConsumerConfig.CONNECTIONS_MAX_IDLE_MS_CONFIG), this.metrics, this.time,
+                metricGrpPrefix, Collections.emptyMap(), true, false, channelBuilder, memoryPool, logContext);
             NetworkClient netClient = new NetworkClient(
-                    new Selector(config.getLong(ConsumerConfig.CONNECTIONS_MAX_IDLE_MS_CONFIG), metrics, time, metricGrpPrefix, channelBuilder, logContext),
+                    selector,
                     this.metadata,
                     clientId,
                     100, // a fixed large enough value will suffice for max in-flight requests

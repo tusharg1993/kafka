@@ -21,6 +21,7 @@ import org.apache.kafka.common.config.AbstractConfig;
 import org.apache.kafka.common.config.ConfigDef;
 import org.apache.kafka.common.config.ConfigDef.Importance;
 import org.apache.kafka.common.config.ConfigDef.Type;
+import org.apache.kafka.common.memory.MemoryPool;
 import org.apache.kafka.common.metrics.Sensor;
 import org.apache.kafka.common.requests.IsolationLevel;
 import org.apache.kafka.common.serialization.Deserializer;
@@ -494,6 +495,11 @@ public class ConsumerConfig extends AbstractConfig {
                                         true,
                                         Importance.MEDIUM,
                                         CommonClientConfigs.ENABLE_STICKY_METADATA_FETCH_DOC)
+                                .define(CommonClientConfigs.POOL_CLASS_NAME_CONFIG,
+                                        Type.CLASS,
+                                        null,
+                                        Importance.MEDIUM,
+                                        CommonClientConfigs.POOL_CLASS_NAME_DOC)
                                 .withClientSslSupport()
                                 .withClientSaslSupport();
 

@@ -18,6 +18,7 @@ package org.apache.kafka.clients.consumer;
 
 import java.util.ArrayList;
 import org.apache.kafka.clients.ClientRequest;
+import org.apache.kafka.clients.CommonClientConfigs;
 import org.apache.kafka.clients.KafkaClient;
 import org.apache.kafka.clients.Metadata;
 import org.apache.kafka.clients.MockClient;
@@ -39,6 +40,7 @@ import org.apache.kafka.common.errors.AuthenticationException;
 import org.apache.kafka.common.errors.InterruptException;
 import org.apache.kafka.common.errors.InvalidTopicException;
 import org.apache.kafka.common.errors.WakeupException;
+import org.apache.kafka.common.memory.MemoryPool;
 import org.apache.kafka.common.metrics.Metrics;
 import org.apache.kafka.common.metrics.Sensor;
 import org.apache.kafka.common.network.Selectable;
@@ -180,6 +182,32 @@ public class KafkaConsumerTest {
         config.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9999");
         config.put(ConsumerConfig.RECEIVE_BUFFER_CONFIG, -2);
         new KafkaConsumer<>(config, new ByteArrayDeserializer(), new ByteArrayDeserializer());
+    }
+
+    @Test(expected = KafkaException.class)
+    public void testGlobalPoolWithNoPoolInstance() {
+        Map<String, Object> config = new HashMap<>();
+        config.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9999");
+        config.put(CommonClientConfigs.POOL_CLASS_NAME_CONFIG, "org.apache.kafka.common.memory.GlobalPoolDelegate");
+        new KafkaConsumer<>(config, new ByteArrayDeserializer(), new ByteArrayDeserializer());
+    }
+
+    @Test
+    public void testKafkaConsumerGlobalMemoryPoolInstance() {
+        // Selector initialization calls memoryPool.size() to figure out low mem threshold.
+        // Using that to verify that the memory pool instance is delegated through GlobalPoolDelegate
+        MemoryPool mockMemoryPool = EasyMock.createMock(MemoryPool.class);
+        EasyMock.expect(mockMemoryPool.size()).andReturn(Long.MAX_VALUE).once();
+        EasyMock.replay(mockMemoryPool);
+
+        Map<String, Object> config = new HashMap<>();
+        config.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9999");
+        config.put(CommonClientConfigs.POOL_CLASS_NAME_CONFIG, "org.apache.kafka.common.memory.GlobalPoolDelegate");
+        config.put(CommonClientConfigs.POOL_INSTANCE_CONFIG, mockMemoryPool);
+        KafkaConsumer<byte[], byte[]> consumer = new KafkaConsumer<>(config, new ByteArrayDeserializer(), new ByteArrayDeserializer());
+
+        consumer.close();
+        EasyMock.verify(mockMemoryPool);
     }
 
     @Test
