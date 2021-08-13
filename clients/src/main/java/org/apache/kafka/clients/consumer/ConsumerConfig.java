@@ -500,6 +500,11 @@ public class ConsumerConfig extends AbstractConfig {
                                         null,
                                         Importance.MEDIUM,
                                         CommonClientConfigs.POOL_CLASS_NAME_DOC)
+                                .define(CommonClientConfigs.ENABLE_CLIENT_RESPONSE_LEAK_CHECK,
+                                        Type.BOOLEAN,
+                                        false,
+                                        Importance.MEDIUM,
+                                        CommonClientConfigs.ENABLE_CLIENT_RESPONSE_LEAK_CHECK_DOC)
                                 .withClientSslSupport()
                                 .withClientSaslSupport();
 
