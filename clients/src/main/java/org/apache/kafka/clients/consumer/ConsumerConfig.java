@@ -274,7 +274,7 @@ public class ConsumerConfig extends AbstractConfig {
     private static final String ALLOW_AUTO_CREATE_TOPICS_DOC = "The client-side (consumer) permission to allow auto-topic creation. Both the client-side and the broker-side should enable auto-topic creation in order for a topic to be automatically created";
     public static final boolean DEFAULT_ALLOW_AUTO_CREATE_TOPICS = false;
 
-    public static final String POOL_CLASS_NAME_CONFIG = "pool.class.name";
+    public static final String POOL_CLASS_NAME_CONFIG = "linkedin.pool.class.name";
     public static final String POOL_CLASS_NAME_DOC = "Memory pool class to pool the fetched data from broker. If not specified, uses MemoryPool.NONE.";
 
     public static final String ENABLE_CLIENT_RESPONSE_LEAK_CHECK = "linkedin.enable.client.resonse.leakcheck";

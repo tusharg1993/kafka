@@ -25,7 +25,7 @@ public class GlobalPoolDelegate implements MemoryPool, Configurable {
     // A specific instance of MemoryPool to be used. Useful in cases where the MemoryPool is supposed to be shared
     // amongst various Kafka Consumers. Please specify pool.class.name as org.apache.kafka.common.memory.GlobalPoolDelegate
     // in order for this to work.
-    private static final String POOL_INSTANCE_CONFIG = "pool.instance";
+    private static final String POOL_INSTANCE_CONFIG = "linkedin.memorypool.pool.instance";
     private MemoryPool delegateMemoryPool;
 
     @Override
