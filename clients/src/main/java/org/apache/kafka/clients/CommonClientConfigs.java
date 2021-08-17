@@ -102,17 +102,6 @@ public class CommonClientConfigs {
     public static final String ENABLE_STICKY_METADATA_FETCH_DOC = "Fetch metadata from the least loaded broker if false. Otherwise fetch metadata "
                                                          + "from the same broker until it is disconnected.";
 
-    public static final String POOL_CLASS_NAME_CONFIG = "pool.class.name";
-    public static final String POOL_CLASS_NAME_DOC = "Memory pool class to pool the fetched data from broker. If not specified, uses MemoryPool.NONE.";
-
-    public static final String POOL_INSTANCE_CONFIG = "pool.instance";
-    public static final String POOL_INSTANCE_DOC =
-        "A specific instance of MemoryPool to be used. Useful in cases where the MemoryPool is supposed to be"
-            + "shared amongst various Kafka Consumers. Please specify pool.class.name as org.apache.kafka.common.memory.GlobalPoolDelegate in order for this to work.";
-
-    public static final String ENABLE_CLIENT_RESPONSE_LEAK_CHECK = "linkedin.enable.client.resonse.leakcheck";
-    public static final String ENABLE_CLIENT_RESPONSE_LEAK_CHECK_DOC = "Use ClientResponse with finalize method to check the release of NetworkReceive buffer.";
-
     /**
      * Postprocess the configuration so that exponential backoff is disabled when reconnect backoff
      * is explicitly configured but the maximum reconnect backoff is not explicitly configured.

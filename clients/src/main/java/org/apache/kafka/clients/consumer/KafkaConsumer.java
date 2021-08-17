@@ -723,11 +723,10 @@ public class KafkaConsumer<K, V> implements Consumer<K, V> {
 
             int heartbeatIntervalMs = config.getInt(ConsumerConfig.HEARTBEAT_INTERVAL_MS_CONFIG);
 
-            MemoryPool memoryPool = config.getConfiguredInstance(CommonClientConfigs.POOL_CLASS_NAME_CONFIG, MemoryPool.class);
+            MemoryPool memoryPool = config.getConfiguredInstance(ConsumerConfig.POOL_CLASS_NAME_CONFIG, MemoryPool.class);
             if (memoryPool == null) {
-              memoryPool = MemoryPool.NONE;
+                memoryPool = MemoryPool.NONE;
             }
-
             Selector selector = new Selector(NetworkReceive.UNLIMITED, config.getLong(ConsumerConfig.CONNECTIONS_MAX_IDLE_MS_CONFIG), this.metrics, this.time,
                 metricGrpPrefix, Collections.emptyMap(), true, false, channelBuilder, memoryPool, logContext);
             NetworkClient netClient = new NetworkClient(
@@ -746,15 +745,9 @@ public class KafkaConsumer<K, V> implements Consumer<K, V> {
                     throttleTimeSensor,
                     logContext);
             netClient.setEnableStickyMetadataFetch(config.getBoolean(CommonClientConfigs.ENABLE_STICKY_METADATA_FETCH_CONFIG));
-            netClient.setEnableClientResponseWithFinalize(config.getBoolean(CommonClientConfigs.ENABLE_CLIENT_RESPONSE_LEAK_CHECK));
-            this.client = new ConsumerNetworkClient(
-                    logContext,
-                    netClient,
-                    metadata,
-                    time,
-                    retryBackoffMs,
-                    config.getInt(ConsumerConfig.REQUEST_TIMEOUT_MS_CONFIG),
-                    heartbeatIntervalMs); //Will avoid blocking an extended period of time to prevent heartbeat thread starvation
+            netClient.setEnableClientResponseWithFinalize(config.getBoolean(ConsumerConfig.ENABLE_CLIENT_RESPONSE_LEAK_CHECK));
+            this.client = new ConsumerNetworkClient(logContext, netClient, metadata, time, retryBackoffMs,
+                config.getInt(ConsumerConfig.REQUEST_TIMEOUT_MS_CONFIG), heartbeatIntervalMs); //Will avoid blocking an extended period of time to prevent heartbeat thread starvation
             OffsetResetStrategy offsetResetStrategy = OffsetResetStrategy.valueOf(config.getString(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG).toUpperCase(Locale.ROOT));
             this.subscriptions = new SubscriptionState(offsetResetStrategy);
             this.assignors = config.getConfiguredInstances(
