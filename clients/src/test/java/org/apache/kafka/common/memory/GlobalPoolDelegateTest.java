@@ -44,7 +44,7 @@ public class GlobalPoolDelegateTest {
 
         GlobalPoolDelegate globalPoolDelegate = new GlobalPoolDelegate();
         globalPoolDelegate.configure(
-            Collections.singletonMap("pool.instance", mockMemoryPool));
+            Collections.singletonMap("linkedin.memorypool.pool.instance", mockMemoryPool));
 
         Assert.assertEquals(globalPoolDelegate.availableMemory(), 100);
         Assert.assertEquals(globalPoolDelegate.isOutOfMemory(), false);

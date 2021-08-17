@@ -202,7 +202,7 @@ public class KafkaConsumerTest {
         Map<String, Object> config = new HashMap<>();
         config.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9999");
         config.put(ConsumerConfig.POOL_CLASS_NAME_CONFIG, "org.apache.kafka.common.memory.GlobalPoolDelegate");
-        config.put("pool.instance", mockMemoryPool);
+        config.put("linkedin.memorypool.pool.instance", mockMemoryPool);
         KafkaConsumer<byte[], byte[]> consumer = new KafkaConsumer<>(config, new ByteArrayDeserializer(), new ByteArrayDeserializer());
 
         consumer.close();
