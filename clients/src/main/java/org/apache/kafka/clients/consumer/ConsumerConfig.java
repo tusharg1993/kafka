@@ -306,6 +306,12 @@ public class ConsumerConfig extends AbstractConfig {
     public static final String LEAST_LOADED_NODE_ALGORITHM_DOC = CommonClientConfigs.LEAST_LOADED_NODE_ALGORITHM_DOC;
     public static final String DEFAULT_LEAST_LOADED_NODE_ALGORITHM = CommonClientConfigs.DEFAULT_LEAST_LOADED_NODE_ALGORITHM;
 
+    public static final String POOL_CLASS_NAME_CONFIG = "linkedin.pool.class.name";
+    public static final String POOL_CLASS_NAME_DOC = "Memory pool class to pool the fetched data from broker. If not specified, uses MemoryPool.NONE.";
+
+    public static final String ENABLE_CLIENT_RESPONSE_LEAK_CHECK = "linkedin.enable.client.resonse.leakcheck";
+    public static final String ENABLE_CLIENT_RESPONSE_LEAK_CHECK_DOC = "Use ClientResponse with finalize method to check the release of NetworkReceive buffer.";
+
     static {
         CONFIG = new ConfigDef().define(BOOTSTRAP_SERVERS_CONFIG,
                                         Type.LIST,
@@ -560,11 +566,16 @@ public class ConsumerConfig extends AbstractConfig {
                                         new EnumValueValidator<>(LeastLoadedNodeAlgorithm.class),
                                         Importance.MEDIUM,
                                         LEAST_LOADED_NODE_ALGORITHM_DOC)
-                                .define(CommonClientConfigs.ENABLE_CLIENT_RESPONSE_LEAK_CHECK,
+                                .define(ConsumerConfig.POOL_CLASS_NAME_CONFIG,
+                                        Type.CLASS,
+                                        null,
+                                        Importance.MEDIUM,
+                                        ConsumerConfig.POOL_CLASS_NAME_DOC)
+                                .define(ConsumerConfig.ENABLE_CLIENT_RESPONSE_LEAK_CHECK,
                                         Type.BOOLEAN,
                                         false,
                                         Importance.MEDIUM,
-                                        CommonClientConfigs.ENABLE_CLIENT_RESPONSE_LEAK_CHECK_DOC)
+                                        ConsumerConfig.ENABLE_CLIENT_RESPONSE_LEAK_CHECK_DOC)
                                 .withClientSslSupport()
                                 .withClientSaslSupport();
     }

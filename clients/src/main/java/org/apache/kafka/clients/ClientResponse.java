@@ -150,6 +150,10 @@ public class ClientResponse {
     }
 
     public void incRefCount() {
+        if (!usingMemoryPool()) {
+            return;
+        }
+
         if (bufferReleased && usingMemoryPool()) {
             // If somebody tried to call incRefCount after buffer has been released. This shouldn't happen
             throw new IllegalStateException(
@@ -159,6 +163,10 @@ public class ClientResponse {
     }
 
     public void decRefCount() {
+        if (!usingMemoryPool()) {
+            return;
+        }
+
         long value = refCount.decrementAndGet();
         if (value < 0 && usingMemoryPool()) {
             // Oops! This seems to be a place where we shouldn't get to.
