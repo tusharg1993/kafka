@@ -35,6 +35,9 @@ public class GlobalPoolDelegate implements MemoryPool, Configurable {
                 + "GlobalPoolDelegate object.");
         }
         delegateMemoryPool = (MemoryPool) configs.get(POOL_INSTANCE_CONFIG);
+        if (delegateMemoryPool == null) {
+            throw new IllegalArgumentException(POOL_INSTANCE_CONFIG + " supplied as null in configs.");
+        }
     }
 
     @Override

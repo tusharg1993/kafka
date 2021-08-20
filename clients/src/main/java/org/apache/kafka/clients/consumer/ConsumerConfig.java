@@ -275,7 +275,7 @@ public class ConsumerConfig extends AbstractConfig {
     public static final boolean DEFAULT_ALLOW_AUTO_CREATE_TOPICS = false;
 
     public static final String POOL_CLASS_NAME_CONFIG = "linkedin.pool.class.name";
-    public static final String POOL_CLASS_NAME_DOC = "FQCN of MemoryPool implementation to pool the fetched data from broker. The implementation should have default no args constructor."
+    public static final String POOL_CLASS_NAME_DOC = "FQCN of MemoryPool implementation to allow reusing memory for fetching data. The implementation should have default no args constructor."
         + " This config is optional and uses MemoryPool.NONE by default. This means that it will call ByteBuf.allocate() on every new response from Broker."
         + " If you want to configure a MemoryPool object with custom parameters, then specify this config as org.apache.kafka.common.memory.GlobalPoolDelegate and which will proxy"
         + " all the calls to instance of MemoryPool object passed in KafkaConsumer properties linkedin.memorypool.pool.instance key";
