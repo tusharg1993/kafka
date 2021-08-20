@@ -33,7 +33,7 @@ public class GlobalPoolDelegateTest {
     @Test(expected = IllegalArgumentException.class)
     public void testNullPoolInstance() {
         GlobalPoolDelegate globalPoolDelegate = new GlobalPoolDelegate();
-        globalPoolDelegate.configure(Collections.emptyMap());
+        globalPoolDelegate.configure(Collections.singletonMap("linkedin.memorypool.pool.instance", null));
     }
 
     @Test
