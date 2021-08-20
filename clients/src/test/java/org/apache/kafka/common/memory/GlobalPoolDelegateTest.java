@@ -30,6 +30,12 @@ public class GlobalPoolDelegateTest {
         globalPoolDelegate.configure(Collections.emptyMap());
     }
 
+    @Test(expected = IllegalArgumentException.class)
+    public void testNullPoolInstance() {
+        GlobalPoolDelegate globalPoolDelegate = new GlobalPoolDelegate();
+        globalPoolDelegate.configure(Collections.emptyMap());
+    }
+
     @Test
     public void testDelegateCalls() {
         MemoryPool mockMemoryPool = Mockito.mock(MemoryPool.class);
