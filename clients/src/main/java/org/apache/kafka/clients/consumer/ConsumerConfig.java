@@ -274,6 +274,15 @@ public class ConsumerConfig extends AbstractConfig {
     private static final String ALLOW_AUTO_CREATE_TOPICS_DOC = "The client-side (consumer) permission to allow auto-topic creation. Both the client-side and the broker-side should enable auto-topic creation in order for a topic to be automatically created";
     public static final boolean DEFAULT_ALLOW_AUTO_CREATE_TOPICS = false;
 
+    public static final String POOL_CLASS_NAME_CONFIG = "linkedin.pool.class.name";
+    public static final String POOL_CLASS_NAME_DOC = "FQCN of MemoryPool implementation to allow reusing memory for fetching data. The implementation should have default no args constructor."
+        + " This config is optional and uses MemoryPool.NONE by default. This means that it will call ByteBuf.allocate() on every new response from Broker."
+        + " If you want to configure a MemoryPool object with custom parameters, then specify this config as org.apache.kafka.common.memory.GlobalPoolDelegate and which will proxy"
+        + " all the calls to instance of MemoryPool object passed in KafkaConsumer properties linkedin.memorypool.pool.instance key";
+
+    public static final String ENABLE_CLIENT_RESPONSE_LEAK_CHECK = "linkedin.enable.client.resonse.leakcheck";
+    public static final String ENABLE_CLIENT_RESPONSE_LEAK_CHECK_DOC = "Use ClientResponse with finalize method to check the release of NetworkReceive buffer.";
+
     static {
         CONFIG = new ConfigDef().define(BOOTSTRAP_SERVERS_CONFIG,
                                         Type.LIST,
@@ -494,11 +503,16 @@ public class ConsumerConfig extends AbstractConfig {
                                         true,
                                         Importance.MEDIUM,
                                         CommonClientConfigs.ENABLE_STICKY_METADATA_FETCH_DOC)
-                                .define(CommonClientConfigs.ENABLE_CLIENT_RESPONSE_LEAK_CHECK,
+                                .define(ConsumerConfig.POOL_CLASS_NAME_CONFIG,
+                                        Type.CLASS,
+                                        null,
+                                        Importance.MEDIUM,
+                                        ConsumerConfig.POOL_CLASS_NAME_DOC)
+                                .define(ConsumerConfig.ENABLE_CLIENT_RESPONSE_LEAK_CHECK,
                                         Type.BOOLEAN,
                                         false,
                                         Importance.MEDIUM,
-                                        CommonClientConfigs.ENABLE_CLIENT_RESPONSE_LEAK_CHECK_DOC)
+                                        ConsumerConfig.ENABLE_CLIENT_RESPONSE_LEAK_CHECK_DOC)
                                 .withClientSslSupport()
                                 .withClientSaslSupport();
 

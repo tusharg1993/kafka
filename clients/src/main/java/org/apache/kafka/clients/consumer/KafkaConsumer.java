@@ -39,12 +39,14 @@ import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.errors.InterruptException;
 import org.apache.kafka.common.errors.TimeoutException;
 import org.apache.kafka.common.internals.ClusterResourceListeners;
+import org.apache.kafka.common.memory.MemoryPool;
 import org.apache.kafka.common.metrics.JmxReporter;
 import org.apache.kafka.common.metrics.MetricConfig;
 import org.apache.kafka.common.metrics.Metrics;
 import org.apache.kafka.common.metrics.MetricsReporter;
 import org.apache.kafka.common.metrics.Sensor;
 import org.apache.kafka.common.network.ChannelBuilder;
+import org.apache.kafka.common.network.NetworkReceive;
 import org.apache.kafka.common.network.Selector;
 import org.apache.kafka.common.requests.IsolationLevel;
 import org.apache.kafka.common.requests.MetadataRequest;
@@ -721,8 +723,14 @@ public class KafkaConsumer<K, V> implements Consumer<K, V> {
 
             int heartbeatIntervalMs = config.getInt(ConsumerConfig.HEARTBEAT_INTERVAL_MS_CONFIG);
 
+            MemoryPool memoryPool = config.getConfiguredInstance(ConsumerConfig.POOL_CLASS_NAME_CONFIG, MemoryPool.class);
+            if (memoryPool == null) {
+                memoryPool = MemoryPool.NONE;
+            }
+            Selector selector = new Selector(NetworkReceive.UNLIMITED, config.getLong(ConsumerConfig.CONNECTIONS_MAX_IDLE_MS_CONFIG), this.metrics, this.time,
+                metricGrpPrefix, Collections.emptyMap(), true, false, channelBuilder, memoryPool, logContext);
             NetworkClient netClient = new NetworkClient(
-                    new Selector(config.getLong(ConsumerConfig.CONNECTIONS_MAX_IDLE_MS_CONFIG), metrics, time, metricGrpPrefix, channelBuilder, logContext),
+                    selector,
                     this.metadata,
                     clientId,
                     100, // a fixed large enough value will suffice for max in-flight requests
@@ -737,15 +745,9 @@ public class KafkaConsumer<K, V> implements Consumer<K, V> {
                     throttleTimeSensor,
                     logContext);
             netClient.setEnableStickyMetadataFetch(config.getBoolean(CommonClientConfigs.ENABLE_STICKY_METADATA_FETCH_CONFIG));
-            netClient.setEnableClientResponseWithFinalize(config.getBoolean(CommonClientConfigs.ENABLE_CLIENT_RESPONSE_LEAK_CHECK));
-            this.client = new ConsumerNetworkClient(
-                    logContext,
-                    netClient,
-                    metadata,
-                    time,
-                    retryBackoffMs,
-                    config.getInt(ConsumerConfig.REQUEST_TIMEOUT_MS_CONFIG),
-                    heartbeatIntervalMs); //Will avoid blocking an extended period of time to prevent heartbeat thread starvation
+            netClient.setEnableClientResponseWithFinalize(config.getBoolean(ConsumerConfig.ENABLE_CLIENT_RESPONSE_LEAK_CHECK));
+            this.client = new ConsumerNetworkClient(logContext, netClient, metadata, time, retryBackoffMs,
+                config.getInt(ConsumerConfig.REQUEST_TIMEOUT_MS_CONFIG), heartbeatIntervalMs); //Will avoid blocking an extended period of time to prevent heartbeat thread starvation
             OffsetResetStrategy offsetResetStrategy = OffsetResetStrategy.valueOf(config.getString(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG).toUpperCase(Locale.ROOT));
             this.subscriptions = new SubscriptionState(offsetResetStrategy);
             this.assignors = config.getConfiguredInstances(
