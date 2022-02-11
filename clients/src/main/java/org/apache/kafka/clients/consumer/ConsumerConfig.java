@@ -283,6 +283,8 @@ public class ConsumerConfig extends AbstractConfig {
     public static final String ENABLE_CLIENT_RESPONSE_LEAK_CHECK = "linkedin.enable.client.resonse.leakcheck";
     public static final String ENABLE_CLIENT_RESPONSE_LEAK_CHECK_DOC = "Use ClientResponse with finalize method to check the release of NetworkReceive buffer.";
 
+    public static final String LI_CLIENT_CLUSTER_METADATA_EXPIRE_TIME_MS_CONFIG = CommonClientConfigs.LI_CLIENT_CLUSTER_METADATA_EXPIRE_TIME_MS_CONFIG;
+
     static {
         CONFIG = new ConfigDef().define(BOOTSTRAP_SERVERS_CONFIG,
                                         Type.LIST,
@@ -313,6 +315,12 @@ public class ConsumerConfig extends AbstractConfig {
                                         atLeast(0),
                                         Importance.LOW,
                                         CommonClientConfigs.METADATA_MAX_AGE_DOC)
+                                .define(LI_CLIENT_CLUSTER_METADATA_EXPIRE_TIME_MS_CONFIG,
+                                        Type.LONG,
+                                        60 * 60 * 1000,
+                                        atLeast(0),
+                                        Importance.LOW,
+                                        CommonClientConfigs.LI_CLIENT_CLUSTER_METADATA_EXPIRE_TIME_MS_DOC)
                                 .define(ENABLE_AUTO_COMMIT_CONFIG,
                                         Type.BOOLEAN,
                                         true,
@@ -500,7 +508,7 @@ public class ConsumerConfig extends AbstractConfig {
                                         CommonClientConfigs.SECURITY_PROTOCOL_DOC)
                                 .define(CommonClientConfigs.ENABLE_STICKY_METADATA_FETCH_CONFIG,
                                         Type.BOOLEAN,
-                                        true,
+                                        false,
                                         Importance.MEDIUM,
                                         CommonClientConfigs.ENABLE_STICKY_METADATA_FETCH_DOC)
                                 .define(ConsumerConfig.POOL_CLASS_NAME_CONFIG,
