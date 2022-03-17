@@ -565,6 +565,10 @@ public class Fetcher<K, V> implements SubscriptionState.Listener, Closeable {
                 pausedCompletedFetchesPerTopicPartition.remove(tp);
             }
             nextInLineRecords = parseCompletedFetch(bufferedCompletedFetch);
+            // nextInLineRecords might be null when completedFetch contains error
+            if (nextInLineRecords == null) {
+                bufferedCompletedFetch.response.decRefCount();
+            }
             pausedCompletedFetches.poll();
         }
     }
@@ -1684,6 +1688,13 @@ public class Fetcher<K, V> implements SubscriptionState.Listener, Closeable {
             completedFetch.response.decRefCount();
         }
         completedFetches.clear();
+        pausedNextInLineRecordsPerTopicPartition.values().forEach(PartitionRecords::drain);
+
+        for (Queue<CompletedFetch> completedFetchesForPausedPartitions : pausedCompletedFetchesPerTopicPartition.values()) {
+            if (completedFetchesForPausedPartitions != null && !completedFetchesForPausedPartitions.isEmpty()) {
+                completedFetchesForPausedPartitions.forEach(completedFetch -> completedFetch.response.decRefCount());
+            }
+        }
         decompressionBufferSupplier.close();
     }
 
